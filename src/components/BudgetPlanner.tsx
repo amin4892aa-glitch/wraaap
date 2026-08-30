@@ -294,7 +294,7 @@ export function BudgetPlanner({ allowOrder = true }: { allowOrder?: boolean }) {
       nutFree,
     }
 
-    addOrder(order)
+    void addOrder(order)
 
     setOrderDone({
       id: order.id,

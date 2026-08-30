@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { loadOrders, ORDERS_EVENT, type Order } from '../data/orders'
+import { ORDERS_EVENT, refreshOrders, type Order } from '../data/orders'
 import {
   DROP_CARDS,
   INVENTORY_EVENT,
@@ -110,8 +110,10 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
 
   useEffect(() => {
     const sync = () => {
-      const found = loadOrders().find((item) => item.id === orderId) || null
-      setOrder(found)
+      void refreshOrders().then((list) => {
+        const found = list.find((item) => item.id === orderId) || null
+        setOrder(found)
+      })
     }
     sync()
     window.addEventListener(ORDERS_EVENT, sync)

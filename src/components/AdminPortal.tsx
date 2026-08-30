@@ -5,7 +5,7 @@ import {
   ORDERS_KEY,
   STATUS_LABEL,
   formatOrderTime,
-  loadOrders,
+  refreshOrders,
   type Order,
 } from '../data/orders'
 import { BudgetPlanner } from './BudgetPlanner'
@@ -16,17 +16,20 @@ type Props = {
 }
 
 export function AdminPortal({ onHome }: Props) {
-  const [orders, setOrders] = useState<Order[]>(() => loadOrders())
+  const [orders, setOrders] = useState<Order[]>([])
   const [tab, setTab] = useState<'overview' | 'budget'>('overview')
 
   useEffect(() => {
-    const refresh = () => setOrders(loadOrders())
+    const refresh = () => {
+      void refreshOrders().then(setOrders)
+    }
+    refresh()
     const onStorage = (event: StorageEvent) => {
       if (event.key === ORDERS_KEY || event.key === null) refresh()
     }
     window.addEventListener(ORDERS_EVENT, refresh)
     window.addEventListener('storage', onStorage)
-    const timer = window.setInterval(refresh, 2500)
+    const timer = window.setInterval(refresh, 2000)
     return () => {
       window.removeEventListener(ORDERS_EVENT, refresh)
       window.removeEventListener('storage', onStorage)

@@ -3,7 +3,7 @@ import {
   ORDERS_EVENT,
   ORDERS_KEY,
   clearFinishedOrders,
-  loadOrders,
+  refreshOrders,
   removeOrder,
   updateOrderStatus,
   type Order,
@@ -22,17 +22,20 @@ type Props = {
 }
 
 export function KitchenPortal({ onHome }: Props) {
-  const [orders, setOrders] = useState<Order[]>(() => loadOrders())
+  const [orders, setOrders] = useState<Order[]>([])
   const [filter, setFilter] = useState<Filter>('alle')
 
   useEffect(() => {
-    const refresh = () => setOrders(loadOrders())
+    const refresh = () => {
+      void refreshOrders().then(setOrders)
+    }
+    refresh()
     const onStorage = (event: StorageEvent) => {
       if (event.key === ORDERS_KEY || event.key === null) refresh()
     }
     window.addEventListener(ORDERS_EVENT, refresh)
     window.addEventListener('storage', onStorage)
-    const timer = window.setInterval(refresh, 2500)
+    const timer = window.setInterval(refresh, 2000)
     return () => {
       window.removeEventListener(ORDERS_EVENT, refresh)
       window.removeEventListener('storage', onStorage)
@@ -121,7 +124,9 @@ export function KitchenPortal({ onHome }: Props) {
           <button
             type="button"
             className="kitchen-chip danger"
-            onClick={() => setOrders(clearFinishedOrders())}
+            onClick={() => {
+              void clearFinishedOrders().then(setOrders)
+            }}
             disabled={!counts.fertig}
           >
             Clear done
@@ -144,8 +149,12 @@ export function KitchenPortal({ onHome }: Props) {
               <OrderTicket3D
                 key={order.id}
                 order={order}
-                onStatus={(status) => setOrders(updateOrderStatus(order.id, status))}
-                onRemove={() => setOrders(removeOrder(order.id))}
+                onStatus={(status) => {
+                  void updateOrderStatus(order.id, status).then(setOrders)
+                }}
+                onRemove={() => {
+                  void removeOrder(order.id).then(setOrders)
+                }}
               />
             ))}
           </Suspense>

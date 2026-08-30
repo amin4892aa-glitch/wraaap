@@ -36,7 +36,7 @@ const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
 ]
 
 const FILTERS: Record<CategoryId, string[]> = {
-  wraps: ['All', 'Creamy', 'Sharp', 'Green', 'Heat'],
+  wraps: ['All', 'Creamy', 'Sharp', 'Green', 'Heat', 'Custom'],
   protein: ['All'],
   veggie: ['All'],
   sauce: ['All'],
@@ -44,6 +44,17 @@ const FILTERS: Record<CategoryId, string[]> = {
 }
 
 const MENU: MenuItem[] = [
+  {
+    id: 'custom',
+    category: 'wraps',
+    filter: 'Custom',
+    name: 'Custom',
+    blurb: 'Build your own · pick any layers',
+    photo: '/menu/tortilla.jpg',
+    popular: true,
+    layers: ['tortilla'],
+    color: '#1a1410',
+  },
   {
     id: 'classic',
     category: 'wraps',
@@ -265,6 +276,7 @@ export function CustomerPortal({ onHome, onLounge }: Props) {
           ? prev.filter((id) => id !== item.layerId)
           : [...prev, item.layerId!],
       )
+      setWrapName('Custom')
       setBagCount((count) => Math.max(1, count))
       return
     }
@@ -277,6 +289,7 @@ export function CustomerPortal({ onHome, onLounge }: Props) {
     const meta = WRAP_LAYERS.find((layer) => layer.id === id)
     if (meta?.required) return
     setLayers((prev) => prev.filter((layerId) => layerId !== id))
+    setWrapName('Custom')
   }
 
   function startOver() {
@@ -302,7 +315,7 @@ export function CustomerPortal({ onHome, onLounge }: Props) {
     event.preventDefault()
     if (!name.trim()) return
     const id = `WRAAAP-${Date.now().toString(36).toUpperCase()}`
-    addOrder({
+    void addOrder({
       id,
       createdAt: new Date().toISOString(),
       status: 'neu',
@@ -321,15 +334,16 @@ export function CustomerPortal({ onHome, onLounge }: Props) {
       })),
       wrapDesign: {
         paintId: SHELL.id,
-        paintLabel: SHELL.label,
+        paintLabel: wrapName,
         layers,
         layerLabels: labels,
       },
+    }).then(() => {
+      setDoneId(id)
+      setShowOrder(false)
+      setBagCount(0)
+      window.setTimeout(() => onLounge(id), 450)
     })
-    setDoneId(id)
-    setShowOrder(false)
-    setBagCount(0)
-    window.setTimeout(() => onLounge(id), 450)
   }
 
   return (

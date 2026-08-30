@@ -36,6 +36,7 @@ export type Order = {
 
 export const ORDERS_KEY = 'wraaap-orders'
 export const ORDERS_EVENT = 'wraaap-orders-changed'
+export const ORDERS_API = '/api/orders'
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
   neu: 'Neu',
@@ -43,56 +44,111 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   fertig: 'Fertig',
 }
 
-export function loadOrders(): Order[] {
+function normalize(orders: Order[]): Order[] {
+  return orders.map((order) => ({
+    ...order,
+    status: order.status || 'neu',
+    customer: order.customer || {
+      name: '',
+      email: '',
+      phone: '',
+      when: '',
+      note: '',
+    },
+    items: order.items || [],
+  }))
+}
+
+function localLoad(): Order[] {
   try {
     const raw = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]') as Order[]
     if (!Array.isArray(raw)) return []
-    return raw.map((order) => ({
-      ...order,
-      status: order.status || 'neu',
-      customer: order.customer || {
-        name: '',
-        email: '',
-        phone: '',
-        when: '',
-        note: '',
-      },
-      items: order.items || [],
-    }))
+    return normalize(raw)
   } catch {
     return []
   }
 }
 
-export function saveOrders(orders: Order[]) {
+function localSave(orders: Order[]) {
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders.slice(0, 40)))
+}
+
+function emit() {
   window.dispatchEvent(new Event(ORDERS_EVENT))
 }
 
-export function addOrder(order: Order) {
-  const next = [order, ...loadOrders()].slice(0, 40)
-  saveOrders(next)
+function cache(orders: Order[]) {
+  const next = normalize(orders).slice(0, 40)
+  localSave(next)
+  emit()
   return next
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus) {
-  const next = loadOrders().map((order) =>
-    order.id === id ? { ...order, status } : order,
-  )
-  saveOrders(next)
-  return next
+/** Sync cache (may be stale). Prefer refreshOrders() for kitchen/admin. */
+export function loadOrders(): Order[] {
+  return localLoad()
 }
 
-export function removeOrder(id: string) {
-  const next = loadOrders().filter((order) => order.id !== id)
-  saveOrders(next)
-  return next
+export async function refreshOrders(): Promise<Order[]> {
+  try {
+    const res = await fetch(ORDERS_API, { cache: 'no-store' })
+    if (res.ok) return cache((await res.json()) as Order[])
+  } catch {
+    /* API offline — local only */
+  }
+  return localLoad()
 }
 
-export function clearFinishedOrders() {
-  const next = loadOrders().filter((order) => order.status !== 'fertig')
-  saveOrders(next)
-  return next
+export async function addOrder(order: Order): Promise<Order[]> {
+  try {
+    const res = await fetch(ORDERS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order),
+    })
+    if (res.ok) return cache((await res.json()) as Order[])
+  } catch {
+    /* fall through */
+  }
+  return cache([order, ...localLoad().filter((item) => item.id !== order.id)])
+}
+
+export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order[]> {
+  try {
+    const res = await fetch(`${ORDERS_API}/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    if (res.ok) return cache((await res.json()) as Order[])
+  } catch {
+    /* fall through */
+  }
+  return cache(localLoad().map((order) => (order.id === id ? { ...order, status } : order)))
+}
+
+export async function removeOrder(id: string): Promise<Order[]> {
+  try {
+    const res = await fetch(`${ORDERS_API}/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    if (res.ok) return cache((await res.json()) as Order[])
+  } catch {
+    /* fall through */
+  }
+  return cache(localLoad().filter((order) => order.id !== id))
+}
+
+export async function clearFinishedOrders(): Promise<Order[]> {
+  try {
+    const res = await fetch(`${ORDERS_API}/clear-finished`, { method: 'POST' })
+    if (res.ok) return cache((await res.json()) as Order[])
+  } catch {
+    /* fall through */
+  }
+  return cache(localLoad().filter((order) => order.status !== 'fertig'))
+}
+
+export function saveOrders(orders: Order[]) {
+  cache(orders)
 }
 
 export function formatOrderTime(iso: string) {
