@@ -11,9 +11,10 @@ npm run dev
 
 ## Auf Render hosten
 
-1. Dieses Repo auf GitHub verbinden.
-2. Neuen **Static Site**-Service anlegen.
-3. Build Command: `npm ci && npm run build`
-4. Publish Directory: `dist`
+**Web Service** (passt zum aktuellen Setup):
 
-Oder das mitgelieferte `render.yaml` beim Blueprint-Deploy nutzen.
+1. Repo `amin4892aa-glitch/wraaap` verbinden
+2. Build Command: `npm ci && npm run build`
+3. Start Command: `npm start` (serviert `dist` mit `serve`)
+
+Oder Blueprint mit `render.yaml` nutzen.
