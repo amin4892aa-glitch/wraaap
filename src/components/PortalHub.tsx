@@ -38,7 +38,39 @@ const portals: {
 ]
 
 /** Slightly wonky oval — felt-marker outline, not a clean vector. */
-function MarkerOval() {
+function MarkerOval({ wide = false }: { wide?: boolean }) {
+  if (wide) {
+    return (
+      <svg
+        className="hub-marker-svg"
+        viewBox="0 0 640 200"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <path
+          className="hub-marker-stroke"
+          d="M100 18
+             C220 8, 420 8, 540 18
+             C600 28, 628 70, 622 100
+             C616 132, 590 172, 540 182
+             C420 194, 220 194, 100 182
+             C50 172, 14 130, 18 100
+             C22 68, 48 28, 100 18 Z"
+        />
+        <path
+          className="hub-marker-stroke hub-marker-bleed"
+          d="M104 24
+             C222 14, 418 14, 536 24
+             C590 34, 616 72, 612 100
+             C608 128, 584 166, 536 176
+             C418 186, 222 186, 104 176
+             C56 166, 24 126, 26 100
+             C28 72, 56 34, 104 24 Z"
+        />
+      </svg>
+    )
+  }
+
   return (
     <svg
       className="hub-marker-svg"
@@ -110,7 +142,7 @@ export function PortalHub({ onOpen, onLounge }: Props) {
 
       {onLounge && (
         <button type="button" className="hub-oval-box hub-lounge" onClick={onLounge}>
-          <MarkerOval />
+          <MarkerOval wide />
           <span className="hub-oval-inner hub-lounge-inner">
             <em className="hub-tag hub-hl">Wait room</em>
             <strong className="hub-hl">Lounge</strong>

@@ -240,7 +240,7 @@
 .hub-lounge.hub-oval-box {
   margin-top: 22px;
   width: 100%;
-  min-height: 140px;
+  min-height: 200px;
 }
 
 .hub-lounge .hub-marker-stroke {
@@ -270,8 +270,9 @@
 }
 
 .hub-lounge-inner {
-  padding: 28px 24px;
-  gap: 6px;
+  padding: 40px 32px 36px;
+  gap: 8px;
+  max-width: 70%;
 }
 
 .hub-index {
@@ -470,6 +471,11 @@
   }
 
   .hub-lounge.hub-oval-box {
-    min-height: 120px;
+    min-height: 180px;
+  }
+
+  .hub-lounge-inner {
+    max-width: 88%;
+    padding: 36px 24px 32px;
   }
 }
