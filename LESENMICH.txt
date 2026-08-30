@@ -1,0 +1,38 @@
+WRAAAP – Wrap-Nachmittag (Rezept + Budgetplaner)
+================================================
+
+Was drin ist
+------------
+- Komplette Website (React)
+- Rezept mit Zubereitung
+- Budgetplaner: Mengen anpassen, Produkte adden/entfernen
+- Preise von Aldi, Migros, Coop, Denner, Lidl
+- Standard = deine Einkaufsliste (Aldi)
+
+Website öffnen (fertig gebaut)
+------------------------------
+1. Ordner "website" öffnen
+2. index.html doppelklicken
+   (funktioniert am besten, wenn du die Dateien lokal
+    mit einem kleinen Server öffnest – siehe unten)
+
+Lokal starten (empfohlen)
+-------------------------
+1. Node.js installieren: https://nodejs.org
+2. Im entpackten Ordner Terminal öffnen
+3. Befehle:
+
+   npm install
+   npm run dev
+
+4. Browser öffnet z.B. http://localhost:5173
+
+Fertige Website neu bauen
+-------------------------
+   npm run build
+   → Ergebnis liegt im Ordner "website" (bzw. dist)
+
+Dropbox-Tipp
+------------
+Diese ZIP einfach in Dropbox legen und teilen.
+Zum Anschauen: entpacken und mit "npm run dev" starten.

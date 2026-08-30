@@ -1,0 +1,259 @@
+.admin {
+  min-height: 100svh;
+  background: #050505;
+  color: #f2f2f2;
+  font-family: var(--sans);
+  position: relative;
+}
+
+.admin::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.admin-chrome {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-chrome > button,
+.admin-chrome > span,
+.admin-tabs button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font: inherit;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.admin-tabs button.active {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.admin-main,
+.admin-budget {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 36px 0 72px;
+}
+
+.admin-kicker {
+  margin: 0 0 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.admin-hero h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.admin-hero em {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.admin-hero p {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 34rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.admin-hero-compact {
+  margin-bottom: 18px;
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 28px 0;
+}
+
+.admin-stats article {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-stats span {
+  display: block;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.admin-stats strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+.admin-table-wrap h2 {
+  margin: 0 0 14px;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.admin-empty {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.admin-table {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-row {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+}
+
+.admin-row-index {
+  grid-row: span 3;
+  align-self: start;
+  letter-spacing: 0.14em;
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.3);
+  padding-top: 4px;
+}
+
+.admin-row strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.admin-row span,
+.admin-design {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+}
+
+.admin-row-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  grid-column: 2;
+}
+
+.admin-row-meta em {
+  font-family: var(--serif);
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.admin-design {
+  margin: 0;
+  grid-column: 2;
+}
+
+/* Budget planner — same black/white system inside Admin */
+.admin-budget .panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.admin-budget .budget-kicker,
+.admin-budget .panel h2,
+.admin-budget .budget-item h3 {
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+}
+
+.admin-budget .budget h2 {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  letter-spacing: -0.03em;
+  text-transform: none;
+  color: #fff;
+}
+
+.admin-budget .budget-total-card,
+.admin-budget .side-card,
+.admin-budget .budget-item,
+.admin-budget .allergy-bar,
+.admin-budget .add-form,
+.admin-budget .order-sheet {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+}
+
+.admin-budget .budget-btn {
+  border-radius: 0;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}
+
+.admin-budget .budget-btn.primary,
+.admin-budget .budget-btn.add {
+  background: #fff;
+  color: #050505;
+  border-color: #fff;
+}
+
+.admin-budget .offer {
+  border-radius: 0;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.admin-budget .offer.selected {
+  border-color: #fff;
+}

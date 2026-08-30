@@ -1,0 +1,240 @@
+.ticket {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ticket-paper {
+  position: relative;
+  background: linear-gradient(180deg, #fffaf0 0%, #f3e6cc 100%);
+  color: #1d1610;
+  padding: 28px 16px 16px;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 10px),
+    97% 100%,
+    94% calc(100% - 7px),
+    91% 100%,
+    88% calc(100% - 7px),
+    85% 100%,
+    82% calc(100% - 7px),
+    79% 100%,
+    76% calc(100% - 7px),
+    73% 100%,
+    70% calc(100% - 7px),
+    67% 100%,
+    64% calc(100% - 7px),
+    61% 100%,
+    58% calc(100% - 7px),
+    55% 100%,
+    52% calc(100% - 7px),
+    49% 100%,
+    46% calc(100% - 7px),
+    43% 100%,
+    40% calc(100% - 7px),
+    37% 100%,
+    34% calc(100% - 7px),
+    31% 100%,
+    28% calc(100% - 7px),
+    25% 100%,
+    22% calc(100% - 7px),
+    19% 100%,
+    16% calc(100% - 7px),
+    13% 100%,
+    10% calc(100% - 7px),
+    7% 100%,
+    4% calc(100% - 7px),
+    0 100%
+  );
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+.ticket-paper::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed rgba(80, 55, 30, 0.22);
+  pointer-events: none;
+}
+
+.ticket-pin {
+  width: 14px;
+  height: 14px;
+  margin: 0 auto -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd0c0, #b83a2e 55%, #6a1a14);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 2;
+}
+
+.ticket-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.ticket-store {
+  margin: 0 0 4px;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: #6a5642;
+}
+
+.ticket-head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-family: inherit;
+}
+
+.ticket-stamp {
+  border: 2px solid currentColor;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+  white-space: nowrap;
+}
+
+.ticket-stamp.neu {
+  color: #b33a28;
+}
+
+.ticket-stamp.in_arbeit {
+  color: #9a6a12;
+}
+
+.ticket-stamp.fertig {
+  color: #3f7a2a;
+}
+
+.ticket-meta,
+.ticket-style {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: #5d4a38;
+  line-height: 1.35;
+}
+
+.ticket-style strong {
+  color: #1d1610;
+}
+
+.ticket-allergy {
+  margin: 8px 0 0;
+  font-weight: 700;
+  color: #b33a28;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+}
+
+.ticket-lines {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px dashed rgba(80, 55, 30, 0.35);
+  display: grid;
+  gap: 8px;
+}
+
+.ticket-lines li {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 8px;
+  align-items: start;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.ticket-box {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border: 1.5px solid #2a2118;
+  background: #fffaf0;
+}
+
+.ticket-note {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  background: rgba(201, 141, 99, 0.18);
+  border-left: 3px solid #c98d63;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 2px;
+}
+
+.ticket-note em {
+  font-style: normal;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a6550;
+}
+
+.ticket-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 2px solid #2a2118;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ticket-bar {
+  padding: 0 2px;
+}
+
+.ticket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ticket-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ticket-actions button.on {
+  background: #fff;
+  color: #050505;
+  border-color: #fff;
+}
+
+.ticket-actions .trash {
+  margin-left: auto;
+  color: #ffb0a0;
+}
+
+.ticket.status-fertig .ticket-paper {
+  opacity: 0.72;
+  filter: grayscale(0.2);
+}
+
+@media print {
+  .ticket-bar,
+  .ticket-pin {
+    display: none !important;
+  }
+
+  .ticket-paper {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}

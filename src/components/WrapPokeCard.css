@@ -1,0 +1,261 @@
+.poke-card {
+  --foil: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.55) 35%,
+    transparent 48%,
+    rgba(255, 255, 255, 0.25) 60%,
+    transparent 75%
+  );
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  border: 3px solid #1a1208;
+  background:
+    linear-gradient(180deg, #fff8e7 0%, #f0e2c4 55%, #e8d4a8 100%);
+  color: #1a1208;
+  padding: 10px;
+  display: grid;
+  gap: 7px;
+  box-shadow:
+    0 0 0 2px var(--rarity),
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  transform-style: preserve-3d;
+}
+
+.poke-card.is-owned {
+  box-shadow:
+    0 0 0 2px var(--rarity),
+    0 0 22px var(--glow),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.poke-card.is-locked {
+  filter: grayscale(1) brightness(0.75);
+  opacity: 0.7;
+}
+
+.poke-foil {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: var(--foil);
+  background-size: 220% 220%;
+  mix-blend-mode: soft-light;
+  opacity: 0.55;
+  z-index: 3;
+  animation: poke-foil 4.5s linear infinite;
+}
+
+.poke-card.rarity-legendary .poke-foil,
+.poke-card.rarity-mythic .poke-foil,
+.poke-card.rarity-epic .poke-foil,
+.poke-card.rarity-divine .poke-foil {
+  opacity: 0.85;
+  mix-blend-mode: color-dodge;
+}
+
+.poke-card.rarity-divine {
+  background: linear-gradient(180deg, #fff0f6 0%, #ffe0ec 45%, #ffd0e4 100%);
+  box-shadow:
+    0 0 0 2px var(--rarity),
+    0 0 28px rgba(255, 143, 184, 0.55),
+    0 10px 28px #00000059;
+}
+
+.poke-card.is-reveal .poke-foil {
+  animation-duration: 1.2s;
+  opacity: 1;
+}
+
+@keyframes poke-foil {
+  0% {
+    background-position: 0% 40%;
+  }
+  100% {
+    background-position: 180% 60%;
+  }
+}
+
+.poke-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: start;
+}
+
+.poke-stage {
+  margin: 0;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6a5a40;
+}
+
+.poke-top h3 {
+  margin: 2px 0 0;
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.05;
+  text-transform: uppercase;
+  max-width: 11ch;
+}
+
+.poke-hp {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: #c4232a;
+}
+
+.poke-hp span {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.poke-hp strong {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.poke-art-frame {
+  position: relative;
+  z-index: 2;
+  border: 2px solid #1a1208;
+  background: #111;
+  box-shadow: inset 0 0 0 3px #f4d98a;
+}
+
+.poke-art {
+  aspect-ratio: 1.15 / 1;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #1a1714;
+}
+
+.poke-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: contrast(1.12) saturate(1.05);
+}
+
+.poke-art span {
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 2.4rem;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.poke-type {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  background: var(--rarity);
+  color: #111;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 6px;
+  border: 1px solid #111;
+}
+
+.poke-rarity-chip {
+  position: relative;
+  z-index: 2;
+  justify-self: start;
+  background: #111;
+  color: var(--rarity);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  padding: 3px 7px;
+  border: 1px solid var(--rarity);
+}
+
+.poke-attack {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-top: 2px solid #1a1208;
+  border-bottom: 2px solid #1a1208;
+  padding: 6px 2px;
+}
+
+.poke-attack em {
+  font-style: normal;
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.poke-attack strong {
+  font-size: 1.1rem;
+  color: #c4232a;
+}
+
+.poke-flavor {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: #4a3f2e;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(26, 18, 8, 0.2);
+  padding: 6px 7px;
+  min-height: 2.6em;
+}
+
+.poke-foot {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6a5a40;
+}
+
+.poke-card.is-reveal {
+  width: min(320px, 88vw);
+  padding: 14px;
+  animation: poke-slam 0.55s cubic-bezier(0.15, 1.4, 0.3, 1);
+}
+
+.poke-card.is-reveal .poke-top h3 {
+  font-size: 1.25rem;
+  max-width: none;
+}
+
+.poke-card.is-reveal .poke-art {
+  aspect-ratio: 4 / 3;
+}
+
+@keyframes poke-slam {
+  0% {
+    opacity: 0;
+    transform: rotate(18deg) scale(2.4) translateY(40px);
+    filter: contrast(2) saturate(2);
+  }
+  55% {
+    opacity: 1;
+    transform: rotate(-4deg) scale(0.96);
+  }
+  100% {
+    transform: rotate(-1.5deg) scale(1);
+    filter: none;
+  }
+}

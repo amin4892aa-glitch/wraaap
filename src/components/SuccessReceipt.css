@@ -1,0 +1,9 @@
+.success-receipt {
+  width: min(220px, 42vw);
+  height: 260px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #2a1c12;
+  border: 1px solid rgba(143, 184, 90, 0.35);
+}

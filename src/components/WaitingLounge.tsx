@@ -1,0 +1,553 @@
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { loadOrders, ORDERS_EVENT, type Order } from '../data/orders'
+import {
+  DROP_CARDS,
+  INVENTORY_EVENT,
+  WRAP_CURSOR_NEED,
+  addToInventory,
+  getCard,
+  inventoryCounts,
+  loadInventory,
+  rollCard,
+  shouldDropCard,
+  uniqueWrapCount,
+  type DropCard,
+  type OwnedCard,
+} from '../data/dropCards'
+import {
+  ACHIEVEMENT_DEFS,
+  hasAchievement,
+  syncAchievementCosmetics,
+  unlockAchievement,
+} from '../data/achievements'
+import { loadChips, redeemPromo, saveChips } from '../data/promoCodes'
+import { resetLoungeCardProgress } from '../lib/resetWraaapProgress'
+import {
+  playBust,
+  playLeverPull,
+  playReelLock,
+  playReelTick,
+  playWin,
+  silenceGambleAudio,
+  stopSlotRoll,
+  unlockGambleAudio,
+} from '../lib/gambleAudio'
+import { WrapPokeCard } from './WrapPokeCard'
+import { DropCutscene } from './DropCutscene'
+import './WaitingLounge.css'
+
+const SYMBOLS = ['🌯', '🌶️', '🥑', '🌽', '🥬', '🍅', '🧅', '💥', '⭐', '💀'] as const
+type Symbol = (typeof SYMBOLS)[number]
+
+type Props = {
+  orderId?: string | null
+  onHome: () => void
+  onOrderAgain: () => void
+}
+
+function rngInt(max: number) {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const buf = new Uint32Array(1)
+    crypto.getRandomValues(buf)
+    return buf[0] % max
+  }
+  return Math.floor(Math.random() * max)
+}
+
+function pickSymbol(): Symbol {
+  return SYMBOLS[rngInt(SYMBOLS.length)]
+}
+
+function payout(a: Symbol, b: Symbol, c: Symbol, bet: number) {
+  if (a === b && b === c) {
+    if (a === '⭐') {
+      return { label: 'JACKPOT ★★★', win: bet * 12, kind: 'jackpot' as const }
+    }
+    if (a === '💥' || a === '🌶️') {
+      return { label: 'HEAT TRIPLE', win: bet * 10, kind: 'triple' as const }
+    }
+    if (a === '💀') {
+      return { label: 'DEATH TRIPLE · house laughs', win: bet * 3, kind: 'triple' as const }
+    }
+    return { label: 'TRIPLE HIT', win: bet * 8, kind: 'triple' as const }
+  }
+  if (a === b || b === c || a === c) {
+    return { label: 'PAIR', win: bet * 2, kind: 'pair' as const }
+  }
+  if ([a, b, c].includes('🌶️') || [a, b, c].includes('💥')) {
+    return {
+      label: 'HEAT NUDGE',
+      win: Math.max(1, Math.floor(bet * 0.5)),
+      kind: 'nudge' as const,
+    }
+  }
+  return { label: 'BUST', win: 0, kind: 'bust' as const }
+}
+
+export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
+  const [order, setOrder] = useState<Order | null>(null)
+  const [chips, setChips] = useState(() => loadChips())
+  const [promo, setPromo] = useState('')
+  const [promoMsg, setPromoMsg] = useState<string | null>(null)
+  const [reels, setReels] = useState<[Symbol, Symbol, Symbol]>(['🌯', '🥑', '🌶️'])
+  const [spinning, setSpinning] = useState(false)
+  const [leverDown, setLeverDown] = useState(false)
+  const [locked, setLocked] = useState<[boolean, boolean, boolean]>([true, true, true])
+  const [result, setResult] = useState<string | null>(null)
+  const [history, setHistory] = useState<string[]>([])
+  const [bet, setBet] = useState(5)
+  const [owned, setOwned] = useState<OwnedCard[]>(() => loadInventory())
+  const [reveal, setReveal] = useState<DropCard | null>(null)
+  const [achievement, setAchievement] = useState<string | null>(null)
+  const [wrapCursorOn, setWrapCursorOn] = useState(() => hasAchievement('wrap-cursor'))
+  const [pendingAch, setPendingAch] = useState(false)
+  const timers = useRef<number[]>([])
+  const blurRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    syncAchievementCosmetics()
+  }, [])
+
+  useEffect(() => {
+    const sync = () => {
+      const found = loadOrders().find((item) => item.id === orderId) || null
+      setOrder(found)
+    }
+    sync()
+    window.addEventListener(ORDERS_EVENT, sync)
+    const id = window.setInterval(sync, 2000)
+    return () => {
+      window.removeEventListener(ORDERS_EVENT, sync)
+      window.clearInterval(id)
+    }
+  }, [orderId])
+
+  useEffect(() => {
+    const syncCards = () => setOwned(loadInventory())
+    window.addEventListener(INVENTORY_EVENT, syncCards)
+    return () => window.removeEventListener(INVENTORY_EVENT, syncCards)
+  }, [])
+
+  useEffect(() => {
+    silenceGambleAudio()
+    return () => {
+      timers.current.forEach((id) => window.clearTimeout(id))
+      if (blurRef.current) window.clearTimeout(blurRef.current)
+      stopSlotRoll()
+      silenceGambleAudio()
+    }
+  }, [])
+
+  const statusLabel = useMemo(() => {
+    if (!order) return 'ticket in the void'
+    if (order.status === 'neu') return 'queued · kitchen staring'
+    if (order.status === 'in_arbeit') return 'on the line · heat up'
+    return 'ready · grab your wrap'
+  }, [order])
+
+  const counts = useMemo(() => inventoryCounts(owned), [owned])
+  const wrapCount = useMemo(() => uniqueWrapCount(owned), [owned])
+
+  function setChipBalance(next: number | ((n: number) => number)) {
+    setChips((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next
+      saveChips(value)
+      return value
+    })
+  }
+
+  function applyPromo(event: FormEvent) {
+    event.preventDefault()
+    const result = redeemPromo(promo)
+    setPromoMsg(result.message)
+    if (result.ok && typeof result.nextBalance === 'number') {
+      setChips(result.nextBalance)
+      setPromo('')
+    }
+    if (result.ok && result.grantCard) {
+      unlockGambleAudio()
+      const card = getCard(result.grantCard)
+      if (card) {
+        // only add to inventory if not already owned
+        const already = loadInventory().some((row) => row.cardId === card.id)
+        const nextOwned = already
+          ? loadInventory()
+          : addToInventory(card.id, 'promo')
+        setOwned(nextOwned)
+        window.setTimeout(() => setReveal(card), 220)
+        maybeUnlockWrapCursor(nextOwned)
+      }
+    }
+  }
+
+  function playEdit(cardId: string) {
+    if (spinning || reveal || achievement) return
+    unlockGambleAudio()
+    const card = getCard(cardId)
+    if (!card) return
+    // DropCutscene starts the correct bed / video — avoid double tracks
+    const already = loadInventory().some((row) => row.cardId === card.id)
+    if (!already) {
+      const nextOwned = addToInventory(card.id, 'edit-preview')
+      setOwned(nextOwned)
+      maybeUnlockWrapCursor(nextOwned)
+    }
+    setReveal(card)
+  }
+
+  function replayOwnedCard(card: DropCard) {
+    if (spinning || reveal || achievement) return
+    const canReplay =
+      card.rarity === 'legendary' ||
+      card.rarity === 'mythic' ||
+      card.rarity === 'divine' ||
+      card.rarity === 'epic'
+    if (!canReplay) return
+    const unlocked = (counts.get(card.id) || 0) > 0
+    if (!unlocked) return
+    unlockGambleAudio()
+    setReveal(card)
+  }
+
+  function maybeUnlockWrapCursor(nextOwned: OwnedCard[]) {
+    if (uniqueWrapCount(nextOwned) < WRAP_CURSOR_NEED) return
+    const { unlocked } = unlockAchievement('wrap-cursor')
+    if (!unlocked) return
+    syncAchievementCosmetics()
+    setWrapCursorOn(true)
+    setPendingAch(true)
+  }
+
+  function closeReveal() {
+    setReveal(null)
+    if (pendingAch) {
+      setPendingAch(false)
+      window.setTimeout(() => {
+        setAchievement(ACHIEVEMENT_DEFS['wrap-cursor'].title)
+      }, 200)
+    }
+  }
+
+  function clearTimers() {
+    timers.current.forEach((id) => window.clearTimeout(id))
+    timers.current = []
+    if (blurRef.current) {
+      window.clearInterval(blurRef.current)
+      blurRef.current = null
+    }
+    stopSlotRoll()
+  }
+
+  function pullArm() {
+    if (spinning || chips < bet || reveal || achievement) return
+    clearTimers()
+    unlockGambleAudio()
+    playLeverPull()
+    setSpinning(true)
+    setLeverDown(true)
+    setResult(null)
+    setLocked([false, false, false])
+    setChipBalance((n) => n - bet)
+
+    const final: [Symbol, Symbol, Symbol] = [pickSymbol(), pickSymbol(), pickSymbol()]
+    const lockMask = [false, false, false]
+    let tickPhase = 0
+
+    const scheduleBlur = (gap: number) => {
+      blurRef.current = window.setTimeout(() => {
+        tickPhase += 1
+        const lockedCount = lockMask.filter(Boolean).length
+        // denser early, slows as reels lock — classic slot roll
+        playReelTick(lockedCount * 0.28 + (tickPhase % 6) * 0.04)
+        setReels(
+          [0, 1, 2].map((index) => (lockMask[index] ? final[index] : pickSymbol())) as [
+            Symbol,
+            Symbol,
+            Symbol,
+          ],
+        )
+        const nextGap = 28 + lockedCount * 22 + Math.min(40, tickPhase)
+        scheduleBlur(nextGap)
+      }, gap)
+    }
+    scheduleBlur(28)
+
+    ;[720, 1240, 1780].forEach((ms, index) => {
+      const id = window.setTimeout(() => {
+        lockMask[index] = true
+        playReelLock(index)
+        setLocked((prev) => {
+          const next = [...prev] as [boolean, boolean, boolean]
+          next[index] = true
+          return next
+        })
+        setReels((prev) => {
+          const next = [...prev] as [Symbol, Symbol, Symbol]
+          next[index] = final[index]
+          return next
+        })
+
+        if (index === 2) {
+          if (blurRef.current) {
+            window.clearTimeout(blurRef.current)
+            blurRef.current = null
+          }
+          setReels(final)
+          const { label, win, kind } = payout(final[0], final[1], final[2], bet)
+          setChipBalance((n) => n + win)
+          const line = `${final.join('')} · ${label} · +${win}`
+          setResult(line)
+          setHistory((prev) => [line, ...prev].slice(0, 8))
+          setSpinning(false)
+          window.setTimeout(() => setLeverDown(false), 180)
+
+          if (kind === 'bust') playBust()
+          else if (!shouldDropCard(kind)) playWin(kind)
+
+          if (shouldDropCard(kind)) {
+            const card = rollCard()
+            const nextOwned = addToInventory(card.id, kind)
+            setOwned(nextOwned)
+            window.setTimeout(() => {
+              // Cutscene owns edit audio — don't start bed here (doubles under video edits)
+              unlockGambleAudio()
+              setReveal(card)
+            }, 280)
+            maybeUnlockWrapCursor(nextOwned)
+          }
+        }
+      }, ms)
+      timers.current.push(id)
+    })
+  }
+
+  return (
+    <div className="lounge">
+      <div className="lounge-noise" aria-hidden />
+      <header className="lounge-top">
+        <button type="button" className="lounge-brand" onClick={onHome}>
+          WRAAAP
+        </button>
+        <p className="lounge-stamp">WAIT · LOUNGE</p>
+        <button type="button" className="lounge-ghost" onClick={onOrderAgain}>
+          Order again
+        </button>
+      </header>
+
+      <main className="lounge-main">
+        <section className="lounge-ticket">
+          <p>your wrap is cooking</p>
+          <h1>{order?.customer.name || 'Guest'}</h1>
+          <strong className="lounge-id">{orderId || '—'}</strong>
+          <em>{statusLabel}</em>
+          <ul>
+            {(order?.wrapDesign?.layerLabels || order?.items.map((i) => i.name) || []).map(
+              (label) => (
+                <li key={label}>{label}</li>
+              ),
+            )}
+          </ul>
+          <p className="lounge-hint">
+            einarmiger bandit · Sol RNG drops · fake chips · rare hits = cards
+          </p>
+        </section>
+
+        <section className="lounge-table" aria-label="Einarmiger Bandit">
+          <div className="lounge-bank">
+            <span>CHIPS</span>
+            <strong>{chips}</strong>
+          </div>
+
+          <form className="lounge-promo" onSubmit={applyPromo}>
+            <label>
+              PROMO
+              <input
+                value={promo}
+                onChange={(event) => setPromo(event.target.value)}
+                placeholder="WRAAAP / SOLRNG / …"
+                disabled={spinning || !!reveal}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            <button type="submit" disabled={spinning || !!reveal || !promo.trim()}>
+              Redeem
+            </button>
+            {promoMsg && <p>{promoMsg}</p>}
+          </form>
+
+          <div className="bandit">
+            <p className="bandit-title">ONE-ARM BANDIT</p>
+            <div className="bandit-body">
+              <div className={`bandit-window ${spinning ? 'spinning' : ''}`}>
+                {reels.map((symbol, index) => (
+                  <div
+                    key={index}
+                    className={`bandit-cell ${locked[index] ? 'locked' : 'rolling'}`}
+                  >
+                    <span className="bandit-face">{symbol}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className={`bandit-arm ${leverDown ? 'down' : ''}`}
+                onClick={pullArm}
+                disabled={spinning || chips < bet || !!reveal}
+                aria-label="Hebel ziehen"
+              >
+                <span className="bandit-arm-knob" />
+                <span className="bandit-arm-shaft" />
+              </button>
+            </div>
+
+            <div className="lounge-bets">
+              {[5, 10, 20].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={bet === value ? 'active' : ''}
+                  onClick={() => setBet(value)}
+                  disabled={spinning || !!reveal}
+                >
+                  Bet {value}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="lounge-pull"
+              onClick={pullArm}
+              disabled={spinning || chips < bet || !!reveal}
+            >
+              {spinning ? 'REELS…' : 'PULL THE ARM'}
+            </button>
+          </div>
+
+          {result && <p className="lounge-result">{result}</p>}
+
+          <div className="lounge-history">
+            <p>paytable · ★★★ jackpot · pair 2× · rare hit → card drop</p>
+            <ul>
+              {history.length === 0 && <li>no scars yet — pull the arm</li>}
+              {history.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="lounge-dex" aria-label="Card collection">
+          <header>
+            <p>COLLECTION</p>
+            <strong>
+              {counts.size}/{DROP_CARDS.length} auras
+            </strong>
+            <button
+              type="button"
+              className="lounge-reset-cards"
+              onClick={() => {
+                if (!window.confirm('Lounge-Karten & Achievements zurücksetzen? Chips bleiben.')) return
+                resetLoungeCardProgress()
+                window.location.reload()
+              }}
+            >
+              Reset cards
+            </button>
+          </header>
+
+          <div className={`lounge-ach ${wrapCursorOn ? 'done' : ''}`}>
+            <div>
+              <em>ACHIEVEMENT</em>
+              <strong>Wrap Cursor</strong>
+              <span>
+                {wrapCursorOn
+                  ? 'Unlocked · your mouse is a wrap'
+                  : `${Math.min(wrapCount, WRAP_CURSOR_NEED)}/${WRAP_CURSOR_NEED} unique wrap auras`}
+              </span>
+            </div>
+            <div className="lounge-ach-bar" aria-hidden>
+              <i style={{ width: `${Math.min(100, (wrapCount / WRAP_CURSOR_NEED) * 100)}%` }} />
+            </div>
+          </div>
+
+          <div className="lounge-edits">
+            <p>EDIT REPLAYS</p>
+            <div className="lounge-edit-row">
+              <button type="button" onClick={() => playEdit('garden-glow')} disabled={!!reveal}>
+                HEADLOCK
+                <span>legendary lyric AE</span>
+              </button>
+              <button type="button" onClick={() => playEdit('classic-myth')} disabled={!!reveal}>
+                BIRD
+                <span>mythic romance AMV</span>
+              </button>
+              <button type="button" onClick={() => playEdit('espresso-notice')} disabled={!!reveal}>
+                ESPRESSO
+                <span>divine blush edit</span>
+              </button>
+              <button type="button" onClick={() => playEdit('sunset-omen')} disabled={!!reveal}>
+                MAMACITA
+                <span>Masha heat AMV</span>
+              </button>
+              <button type="button" onClick={() => playEdit('focus-water')} disabled={!!reveal}>
+                FOCUSWATER
+                <span>Apple motion · watermark</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="lounge-dex-grid">
+            {DROP_CARDS.map((card) => {
+              const count = counts.get(card.id) || 0
+              const unlocked = count > 0
+              const canReplay =
+                unlocked &&
+                (card.rarity === 'legendary' ||
+                  card.rarity === 'mythic' ||
+                  card.rarity === 'divine' ||
+                  card.rarity === 'epic')
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  className={`lounge-dex-card ${canReplay ? 'can-replay' : ''}`}
+                  onClick={() => replayOwnedCard(card)}
+                  disabled={!canReplay || !!reveal}
+                  title={canReplay ? 'tap to replay cutscene' : undefined}
+                >
+                  <WrapPokeCard
+                    card={card}
+                    owned={unlocked}
+                    locked={!unlocked}
+                    count={count}
+                  />
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      </main>
+
+      {reveal && (
+        <DropCutscene card={reveal} onDone={closeReveal} />
+      )}
+
+      {achievement && (
+        <div className="ach-reveal" role="dialog" aria-modal="true">
+          <button type="button" className="card-reveal-dismiss" onClick={() => setAchievement(null)}>
+            tap to equip cursor
+          </button>
+          <div className="ach-card">
+            <p>ACHIEVEMENT UNLOCKED</p>
+            <strong>{achievement}</strong>
+            <span>{ACHIEVEMENT_DEFS['wrap-cursor'].blurb}</span>
+            <em>cursor is now a wrap · site-wide</em>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

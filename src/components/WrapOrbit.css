@@ -1,0 +1,19 @@
+.wrap-orbit {
+  width: min(1100px, calc(100% - 32px));
+  height: clamp(220px, 38vw, 360px);
+  margin: 0 auto 8px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(201, 141, 99, 0.3);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+  background: #1a120c;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .wrap-orbit {
+    height: 220px;
+    border-radius: 18px;
+  }
+}

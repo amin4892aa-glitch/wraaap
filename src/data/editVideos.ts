@@ -1,0 +1,30 @@
+/** Rendered AE / CapCut edits — drop files in public/edits/. */
+export type EditVideoKey = 'mamacita' | 'headlock' | 'romance' | 'divine' | 'focuswater'
+
+/** Prefer mp4 (browser), then mov (AE High Quality export). */
+export const EDIT_VIDEO_CANDIDATES: Record<EditVideoKey, string[]> = {
+  mamacita: ['edits/mamacita.mp4', 'edits/mamacita.mov', 'edits/mamacita-test.mov'],
+  headlock: ['edits/headlock.mp4', 'edits/headlock.mov'],
+  romance: ['edits/romance.mp4', 'edits/romance.mov'],
+  divine: ['edits/divine.mp4', 'edits/divine.mov'],
+  focuswater: ['edits/focuswater.mp4', 'edits/focuswater.mov'],
+}
+
+export function editVideoUrls(preset: string): string[] {
+  if (!(preset in EDIT_VIDEO_CANDIDATES)) return []
+  const base = import.meta.env.BASE_URL
+  return EDIT_VIDEO_CANDIDATES[preset as EditVideoKey].map((file) => `${base}${file}`)
+}
+
+/** HEAD request — first existing render in /public/edits. */
+export async function probeEditVideo(preset: string): Promise<string | null> {
+  for (const url of editVideoUrls(preset)) {
+    try {
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-cache' })
+      if (res.ok) return url
+    } catch {
+      /* try next */
+    }
+  }
+  return null
+}
