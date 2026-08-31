@@ -13,6 +13,100 @@
   box-shadow: 5px 5px 0 var(--red);
   font-family: var(--mono);
   color: #f4efe6;
+  transition: width 0.22s ease, box-shadow 0.22s ease;
+}
+
+.lounge-music.is-collapsed {
+  width: min(240px, calc(100vw - 24px));
+  box-shadow: 3px 3px 0 var(--red);
+}
+
+.lounge-music-collapse {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  border: 2px solid #f4efe6;
+  background: #111;
+  color: #f4efe6;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.lounge-music-collapse:hover {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.lounge-music-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 38px 10px 12px;
+}
+
+.lounge-music-mini-disc {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.lounge-music-mini-vinyl {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle at center, #0a0a0a 0 1px, #141414 1px 2px, #090909 2px 3px),
+    #080808;
+  box-shadow: 0 0 0 2px rgba(244, 239, 230, 0.2);
+}
+
+.lounge-music-mini-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lounge-music-mini-meta:hover strong {
+  color: #fff;
+}
+
+.lounge-music.is-playing .lounge-music-mini-vinyl {
+  animation: lounge-vinyl-spin 2.6s linear infinite;
+  box-shadow:
+    0 0 0 2px var(--red),
+    0 0 12px rgba(196, 35, 42, 0.45);
+}
+
+.lounge-music-mini-meta strong {
+  font-family: var(--punk);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lounge-music-mini-meta span {
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 230, 0.55);
 }
 
 .lounge-music-deck {
@@ -21,6 +115,7 @@
   gap: 10px 12px;
   align-items: center;
   padding: 12px 14px 10px;
+  padding-right: 36px;
 }
 
 .lounge-music-sleeve {
@@ -478,7 +573,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lounge-music.is-playing .lounge-music-vinyl-disc {
+  .lounge-music.is-playing .lounge-music-vinyl-disc,
+  .lounge-music.is-playing .lounge-music-mini-vinyl {
     animation: none;
   }
 

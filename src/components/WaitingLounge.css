@@ -1089,8 +1089,13 @@
 
 @media (max-width: 720px) {
   .lounge-ready-toast {
-    top: calc(var(--lounge-chrome-top) + 128px);
+    top: calc(var(--lounge-chrome-top) + 118px);
     left: max(12px, env(safe-area-inset-left));
     width: calc(100% - 24px);
+  }
+
+  .lounge-music.is-collapsed ~ .lounge-ready-toast,
+  .lounge:has(.lounge-music.is-collapsed) .lounge-ready-toast {
+    top: calc(var(--lounge-chrome-top) + 58px);
   }
 }
