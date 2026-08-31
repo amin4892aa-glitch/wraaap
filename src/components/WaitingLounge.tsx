@@ -37,6 +37,7 @@ import {
   playLeverPull,
   playReelLock,
   playReelTick,
+  playReadyWin,
   playWin,
   silenceGambleAudio,
   stopSlotRoll,
@@ -99,21 +100,21 @@ function payout(a: Symbol, b: Symbol, c: Symbol, bet: number) {
   return { label: 'BUST', win: 0, kind: 'bust' as const }
 }
 
-function readyNoticeKey(orderId: string) {
-  return `wraaap-ready-notice-${orderId}`
+function readyDismissKey(orderId: string) {
+  return `wraaap-ready-dismissed-${orderId}`
 }
 
-function hasReadyNotice(orderId: string) {
+function isReadyDismissed(orderId: string) {
   try {
-    return sessionStorage.getItem(readyNoticeKey(orderId)) === '1'
+    return sessionStorage.getItem(readyDismissKey(orderId)) === '1'
   } catch {
     return false
   }
 }
 
-function markReadyNotice(orderId: string) {
+function dismissReadyNotice(orderId: string) {
   try {
-    sessionStorage.setItem(readyNoticeKey(orderId), '1')
+    sessionStorage.setItem(readyDismissKey(orderId), '1')
   } catch {
     /* ignore */
   }
@@ -214,19 +215,23 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
     prevStatusRef.current = next
 
     if (next === 'fertig') {
-      if (prev !== 'fertig' && !hasReadyNotice(orderId)) {
-        markReadyNotice(orderId)
-        setReadyNotice(true)
+      if (prev !== null && prev !== 'fertig') {
         unlockGambleAudio()
-        playWin('pair')
+        playReadyWin()
         pushReadyNotification(order)
-      } else if (hasReadyNotice(orderId)) {
+      }
+      if (!isReadyDismissed(orderId)) {
         setReadyNotice(true)
       }
     } else {
       setReadyNotice(false)
     }
   }, [order, orderId])
+
+  function closeReadyNotice() {
+    if (orderId) dismissReadyNotice(orderId)
+    setReadyNotice(false)
+  }
 
   useEffect(() => {
     const syncCards = () => setOwned(loadInventory())
@@ -439,14 +444,17 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
       <LoungeMusicPlayer />
 
       {readyNotice && order?.status === 'fertig' && (
-        <div className="lounge-ready-toast" role="status" aria-live="assertive">
-          <div>
-            <strong>WRAP READY</strong>
+        <div className="lounge-ready-toast" role="alertdialog" aria-live="assertive" aria-labelledby="lounge-ready-title">
+          <button type="button" className="lounge-ready-toast-close" onClick={closeReadyNotice} aria-label="Close notification">
+            ×
+          </button>
+          <div className="lounge-ready-toast-body">
+            <strong id="lounge-ready-title">WRAP READY</strong>
             <span>
               {order.customer.name || 'Guest'} · {orderId} — pick it up
             </span>
           </div>
-          <button type="button" onClick={() => setReadyNotice(false)}>
+          <button type="button" className="lounge-ready-toast-ok" onClick={closeReadyNotice}>
             OK
           </button>
         </div>

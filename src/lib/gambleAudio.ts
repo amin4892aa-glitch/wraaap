@@ -291,6 +291,9 @@ function stopReelWhir(fade = 0.12) {
 const WIN_SFX_URL = `${import.meta.env.BASE_URL}sfx/wraap-win.mp3`
 /** Trim short lead-in; keep most of the sting. */
 const AURA_WIN_SKIP_SEC = 0.85
+/** Order-ready: start a bit earlier in the clip and let more of it play. */
+const READY_WIN_SKIP_SEC = 0.35
+const READY_WIN_TAIL_RESERVE_SEC = 1.8
 let winEl: HTMLAudioElement | null = null
 let winBuffer: AudioBuffer | null = null
 let winLoad: Promise<AudioBuffer | null> | null = null
@@ -369,16 +372,22 @@ function winningSoundSynth(start: number, level = 3) {
   soft(top * 1.5, start + notes.length * 0.09 + 0.02, 0.3, 0.1, 'triangle')
 }
 
-function skipStartOffset(duration: number) {
+function skipStartOffset(duration: number, skipSec = AURA_WIN_SKIP_SEC, tailReserveSec = 2.5) {
   if (!Number.isFinite(duration) || duration <= 0.5) return 0
-  // cut intro; never skip past the last ~2.5s so the sting still lands
-  const maxSkip = Math.max(0, duration - 2.5)
-  return Math.min(AURA_WIN_SKIP_SEC, maxSkip)
+  const maxSkip = Math.max(0, duration - tailReserveSec)
+  return Math.min(skipSec, maxSkip)
+}
+
+type WinSfxOpts = {
+  skipSec?: number
+  tailReserveSec?: number
 }
 
 /** WRAAAP win MP3 — WebAudio first (survives edit cutscenes better). */
-function playAuraWinSfx() {
+function playAuraWinSfx(opts: WinSfxOpts = {}) {
   if (muted) return
+  const skipSec = opts.skipSec ?? AURA_WIN_SKIP_SEC
+  const tailReserveSec = opts.tailReserveSec ?? 2.5
   const audioCtx = ac()
   if (audioCtx && audioCtx.state === 'suspended') void audioCtx.resume()
 
@@ -390,7 +399,7 @@ function playAuraWinSfx() {
       stopWinSample()
       const startAt = () => {
         const dur = Number.isFinite(el.duration) && el.duration > 0 ? el.duration : 7.2
-        el.currentTime = skipStartOffset(dur)
+        el.currentTime = skipStartOffset(dur, skipSec, tailReserveSec)
         el.volume = 1
       }
       if (el.readyState >= 1) startAt()
@@ -400,16 +409,16 @@ function playAuraWinSfx() {
       })
       return
     }
-    playAuraWinBuffer(buf)
+    playAuraWinBuffer(buf, skipSec, tailReserveSec)
   })
 }
 
-function playAuraWinBuffer(buf: AudioBuffer) {
+function playAuraWinBuffer(buf: AudioBuffer, skipSec = AURA_WIN_SKIP_SEC, tailReserveSec = 2.5) {
   if (muted) return
   const audio = ac()
   if (!audio || !master) return
   stopWinSample()
-  const offset = skipStartOffset(buf.duration)
+  const offset = skipStartOffset(buf.duration, skipSec, tailReserveSec)
   const src = audio.createBufferSource()
   src.buffer = buf
   const g = audio.createGain()
@@ -422,6 +431,11 @@ function playAuraWinBuffer(buf: AudioBuffer) {
   src.onended = () => {
     if (winSrc === src) winSrc = null
   }
+}
+
+/** Wrap-ready sting — earlier entry, longer tail. */
+export function playReadyWin() {
+  playAuraWinSfx({ skipSec: READY_WIN_SKIP_SEC, tailReserveSec: READY_WIN_TAIL_RESERVE_SEC })
 }
 
 export function unlockGambleAudio() {
