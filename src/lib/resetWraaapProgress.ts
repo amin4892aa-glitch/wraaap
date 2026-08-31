@@ -48,8 +48,24 @@ export function resetWraaapProgress() {
   window.dispatchEvent(new Event('wraaap-orders-changed'))
 }
 
-/** Lounge cards / aura collection only — keeps chips, promos, orders. */
-export function resetLoungeCardProgress() {
+/** Used promo codes + active luck buff — keeps chips & cards. */
+export function resetPromoProgress() {
+  if (typeof window === 'undefined') return
+  const keys = [
+    'wraaap-promos-used',
+    'wraaap-luck-until',
+    'wraaap-luck-mult',
+    'wraaap-luck-pulls',
+    'wraaap-edit-guarantee',
+  ]
+  for (const key of keys) {
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      /* ignore */
+    }
+  }
+}
   if (typeof window === 'undefined') return
   try {
     localStorage.removeItem('wraaap-card-inventory')

@@ -199,6 +199,19 @@
   letter-spacing: 0.08em;
 }
 
+.admin-reset-promos {
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
 /* Budget planner — same black/white system inside Admin */
 .admin-budget .panel {
   background: rgba(255, 255, 255, 0.03);

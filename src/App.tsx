@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { PortalHub } from './components/PortalHub'
 import { PortalGate } from './components/PortalGate'
-import { resetWraaapProgress, resetLoungeCardProgress } from './lib/resetWraaapProgress'
+import { resetWraaapProgress, resetLoungeCardProgress, resetPromoProgress } from './lib/resetWraaapProgress'
 import './App.css'
 
 const CustomerPortal = lazy(() =>
@@ -46,6 +46,12 @@ function App() {
     const hash = window.location.hash.replace('#/', '').replace('#', '')
     if (hash === 'reset-cards' || hash === 'reset-cards/') {
       resetLoungeCardProgress()
+      window.location.hash = '#/lounge'
+      window.location.reload()
+      return
+    }
+    if (hash === 'reset-promos' || hash === 'reset-promos/') {
+      resetPromoProgress()
       window.location.hash = '#/lounge'
       window.location.reload()
       return

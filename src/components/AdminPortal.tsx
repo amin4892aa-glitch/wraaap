@@ -183,8 +183,25 @@ export function AdminPortal({ onHome }: Props) {
               Promo
               <em> codes.</em>
             </h1>
-            <p>Redeem in Wait room. Chips are fake. Edit codes play cutscenes.</p>
+            <p>Redeem in Wait room. Chips are fake. Replay only for bandit-rolled edits.</p>
           </section>
+
+          <div className="admin-stats">
+            <article>
+              <span>Actions</span>
+              <button
+                type="button"
+                className="admin-reset-promos"
+                onClick={() => {
+                  if (!window.confirm('Reset used promo codes & luck on this device?')) return
+                  window.location.hash = '#/reset-promos'
+                  window.location.reload()
+                }}
+              >
+                Reset used codes
+              </button>
+            </article>
+          </div>
 
           <section className="admin-table-wrap">
             <h2>{PROMO_CODES.length} codes</h2>
