@@ -449,13 +449,13 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
 
   useEffect(() => {
     if (!videoReady) return
-    // Focuswater: bed under muted video. Video edits with soundtrack: no bed.
-    const wantBed = isGod && (!useVideo || isFocuswater)
+    // Soundtrack videos (incl. focuswater): no synth bed under the edit track.
+    const wantBed = isGod && !useVideo
     unlockGambleAudio()
     if (wantBed && !isEditTrackPlaying()) {
       startEditBed(preset)
     }
-    if (useVideo && !isFocuswater) {
+    if (useVideo) {
       stopEditBed(0.05)
     }
     const session = ++editMountSession
@@ -478,15 +478,18 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
   useEffect(() => {
     if (!videoReady || !useVideo || !videoSrc || showCard) return
     unlockGambleAudio()
-    if (!isFocuswater) stopEditBed(0.05)
+    stopEditBed(0.05)
     const el = videoRef.current
     if (!el) return
-    el.muted = isFocuswater
+    el.muted = false
     el.currentTime = 0
     const play = el.play()
     if (play && typeof play.catch === 'function') {
       play.catch(() => {
-        setUseVideo(false)
+        // Autoplay with sound blocked — fall back to muted + bed
+        el.muted = true
+        if (isFocuswater) startEditBed('focuswater')
+        el.play().catch(() => setUseVideo(false))
       })
     }
   }, [videoReady, useVideo, videoSrc, showCard, isFocuswater])
@@ -577,7 +580,7 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
             className="drop-cut-video"
             src={videoSrc}
             playsInline
-            muted={isFocuswater}
+            muted={false}
             preload="auto"
             onEnded={finishToCard}
             onError={() => setUseVideo(false)}
