@@ -10,10 +10,11 @@
   --hand: 'Permanent Marker', cursive;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 
+  height: 100svh;
   min-height: 100svh;
   display: grid;
   grid-template-columns: 168px 1fr 280px;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   background:
     radial-gradient(circle at 20% 10%, rgba(196, 35, 42, 0.18), transparent 40%),
     var(--kiosk-bg);
@@ -420,11 +421,13 @@
   border-left: 3px solid #111;
   padding: 14px;
   display: grid;
-  align-content: start;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  align-content: stretch;
   gap: 10px;
   position: relative;
   z-index: 1;
-  overflow: auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .kiosk-order-label {
@@ -453,9 +456,14 @@
 .kiosk-order-list {
   list-style: none;
   margin: 6px 0 0;
-  padding: 0;
+  padding: 0 4px 8px 0;
   display: grid;
   gap: 8px;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kiosk-order-list li {
@@ -548,10 +556,16 @@
 
 .kiosk-sheet-photos {
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 0 2px 4px 0 !important;
   list-style: none !important;
   display: grid !important;
   gap: 8px !important;
+  align-content: start !important;
+  min-height: 0 !important;
+  max-height: min(38svh, 280px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 .kiosk-sheet-photos li {
@@ -696,6 +710,7 @@
 
 .kiosk-sheet-card {
   width: min(440px, 100%);
+  max-height: min(92svh, 900px);
   background:
     linear-gradient(160deg, #fffdf8, #efe6d4);
   border: 3px solid #111;
@@ -706,6 +721,9 @@
   color-scheme: light;
   transform: rotate(-0.8deg);
   box-shadow: 8px 8px 0 var(--kiosk-red);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kiosk-sheet-head {
