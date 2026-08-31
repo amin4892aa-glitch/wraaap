@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { isPortalUnlocked, setPortalUnlocked, type GatedPortal } from '../lib/portalAuth'
 import './PortalGate.css'
 
 type Props = {
-  portal: 'kueche' | 'admin'
+  portal: GatedPortal
   title: string
   hint: string
   password: string
@@ -10,17 +11,13 @@ type Props = {
   children: ReactNode
 }
 
-function storageKey(portal: string) {
-  return `wraaap-auth-${portal}`
-}
-
 export function PortalGate({ portal, title, hint, password, onHome, children }: Props) {
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(storageKey(portal)) === '1')
+  const [unlocked, setUnlocked] = useState(() => isPortalUnlocked(portal))
   const [value, setValue] = useState('')
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    setUnlocked(sessionStorage.getItem(storageKey(portal)) === '1')
+    setUnlocked(isPortalUnlocked(portal))
     setValue('')
     setError(false)
   }, [portal])
@@ -28,7 +25,7 @@ export function PortalGate({ portal, title, hint, password, onHome, children }: 
   function submit(event: FormEvent) {
     event.preventDefault()
     if (value.trim() === password) {
-      sessionStorage.setItem(storageKey(portal), '1')
+      setPortalUnlocked(portal, true)
       setUnlocked(true)
       setError(false)
       return
@@ -37,7 +34,7 @@ export function PortalGate({ portal, title, hint, password, onHome, children }: 
   }
 
   function lock() {
-    sessionStorage.removeItem(storageKey(portal))
+    setPortalUnlocked(portal, false)
     setUnlocked(false)
     setValue('')
   }

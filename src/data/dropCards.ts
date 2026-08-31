@@ -315,6 +315,19 @@ export function inventoryCounts(owned: OwnedCard[]) {
   return map
 }
 
+/** Bandit hit types — only these count as a real roll for edit replay. */
+export const ROLL_SOURCES = new Set(['jackpot', 'triple', 'pair', 'nudge'])
+
+export function hasRolledCard(owned: OwnedCard[], cardId: string) {
+  return owned.some((row) => row.cardId === cardId && ROLL_SOURCES.has(row.from))
+}
+
+const REPLAY_RARITIES = new Set<CardRarity>(['legendary', 'mythic', 'divine', 'epic'])
+
+export function canReplayEdit(owned: OwnedCard[], card: DropCard) {
+  return REPLAY_RARITIES.has(card.rarity) && hasRolledCard(owned, card.id)
+}
+
 export function uniqueWrapCount(owned: OwnedCard[]) {
   const ids = new Set(
     owned

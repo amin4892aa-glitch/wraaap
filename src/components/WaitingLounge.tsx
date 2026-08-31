@@ -6,6 +6,7 @@ import {
   INVENTORY_EVENT,
   WRAP_CURSOR_NEED,
   addToInventory,
+  canReplayEdit,
   getCard,
   inventoryCounts,
   loadInventory,
@@ -23,6 +24,7 @@ import {
 } from '../data/achievements'
 import { loadChips, redeemPromo, saveChips } from '../data/promoCodes'
 import { resetLoungeCardProgress } from '../lib/resetWraaapProgress'
+import { isPortalUnlocked } from '../lib/portalAuth'
 import {
   playBust,
   playLeverPull,
@@ -188,30 +190,18 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   }
 
   function playEdit(cardId: string) {
+    if (!isPortalUnlocked('admin')) return
     if (spinning || reveal || achievement) return
     unlockGambleAudio()
     const card = getCard(cardId)
     if (!card) return
-    const already = loadInventory().some((row) => row.cardId === card.id)
-    if (!already) {
-      const nextOwned = addToInventory(card.id, 'edit-preview')
-      setOwned(nextOwned)
-      maybeUnlockWrapCursor(nextOwned)
-    }
-    // Keep user-gesture chain for video+audio autoplay
+    // Admin preview only — does not grant collection or replay
     void import('./DropCutscene').finally(() => setReveal(card))
   }
 
   function replayOwnedCard(card: DropCard) {
     if (spinning || reveal || achievement) return
-    const canReplay =
-      card.rarity === 'legendary' ||
-      card.rarity === 'mythic' ||
-      card.rarity === 'divine' ||
-      card.rarity === 'epic'
-    if (!canReplay) return
-    const unlocked = (counts.get(card.id) || 0) > 0
-    if (!unlocked) return
+    if (!canReplayEdit(owned, card)) return
     unlockGambleAudio()
     setReveal(card)
   }
@@ -480,42 +470,44 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
             </div>
           </div>
 
-          <div className="lounge-edits">
-            <p>EDIT REPLAYS</p>
-            <div className="lounge-edit-row">
-              <button type="button" onClick={() => playEdit('garden-glow')} disabled={!!reveal}>
-                HEADLOCK
-                <span>legendary lyric AE</span>
-              </button>
-              <button type="button" onClick={() => playEdit('classic-myth')} disabled={!!reveal}>
-                BIRD
-                <span>mythic romance AMV</span>
-              </button>
-              <button type="button" onClick={() => playEdit('espresso-notice')} disabled={!!reveal}>
-                ESPRESSO
-                <span>divine blush edit</span>
-              </button>
-              <button type="button" onClick={() => playEdit('sunset-omen')} disabled={!!reveal}>
-                MAMACITA
-                <span>Masha heat AMV</span>
-              </button>
-              <button type="button" onClick={() => playEdit('focus-water')} disabled={!!reveal}>
-                FOCUSWATER
-                <span>Apple motion · watermark</span>
-              </button>
+          {isPortalUnlocked('admin') && (
+            <div className="lounge-edits">
+              <p>EDIT PREVIEW · admin only</p>
+              <div className="lounge-edit-row">
+                <button type="button" onClick={() => playEdit('garden-glow')} disabled={!!reveal}>
+                  HEADLOCK
+                  <span>legendary lyric AE</span>
+                </button>
+                <button type="button" onClick={() => playEdit('classic-myth')} disabled={!!reveal}>
+                  BIRD
+                  <span>mythic romance AMV</span>
+                </button>
+                <button type="button" onClick={() => playEdit('espresso-notice')} disabled={!!reveal}>
+                  ESPRESSO
+                  <span>divine blush edit</span>
+                </button>
+                <button type="button" onClick={() => playEdit('sunset-omen')} disabled={!!reveal}>
+                  MAMACITA
+                  <span>Masha heat AMV</span>
+                </button>
+                <button type="button" onClick={() => playEdit('focus-water')} disabled={!!reveal}>
+                  FOCUSWATER
+                  <span>Apple motion · watermark</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="lounge-dex-grid">
             {DROP_CARDS.map((card) => {
               const count = counts.get(card.id) || 0
               const unlocked = count > 0
-              const canReplay =
-                unlocked &&
-                (card.rarity === 'legendary' ||
-                  card.rarity === 'mythic' ||
-                  card.rarity === 'divine' ||
-                  card.rarity === 'epic')
+              const canReplay = canReplayEdit(owned, card)
+              const replayHint = canReplay
+                ? 'tap to replay cutscene'
+                : unlocked
+                  ? 'roll this edit on the bandit to unlock replay'
+                  : undefined
               return (
                 <button
                   key={card.id}
@@ -523,7 +515,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
                   className={`lounge-dex-card ${canReplay ? 'can-replay' : ''}`}
                   onClick={() => replayOwnedCard(card)}
                   disabled={!canReplay || !!reveal}
-                  title={canReplay ? 'tap to replay cutscene' : undefined}
+                  title={replayHint}
                 >
                   <WrapPokeCard
                     card={card}
