@@ -38,6 +38,7 @@
   align-items: center;
   gap: 12px;
   padding: 16px 18px;
+  padding-right: min(360px, calc(100vw - 120px));
   border-bottom: 3px solid #f4efe6;
 }
 
@@ -117,13 +118,6 @@
   transition:
     box-shadow 0.35s ease,
     transform 0.35s ease;
-}
-
-.lounge-music {
-  position: relative;
-  z-index: 2;
-  margin: 0 18px 12px;
-  max-width: 1200px;
 }
 
 .lounge-ticket.is-ready {
