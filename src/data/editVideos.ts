@@ -16,15 +16,23 @@ export function editVideoUrls(preset: string): string[] {
   return EDIT_VIDEO_CANDIDATES[preset as EditVideoKey].map((file) => `${base}${file}`)
 }
 
-/** HEAD request — first existing render in /public/edits. */
+/** HEAD request — first existing render in /public/edits. Cached per session. */
+const probeCache = new Map<string, string | null>()
+
 export async function probeEditVideo(preset: string): Promise<string | null> {
+  if (probeCache.has(preset)) return probeCache.get(preset) ?? null
+
   for (const url of editVideoUrls(preset)) {
     try {
-      const res = await fetch(url, { method: 'HEAD', cache: 'no-cache' })
-      if (res.ok) return url
+      const res = await fetch(url, { method: 'HEAD', cache: 'force-cache' })
+      if (res.ok) {
+        probeCache.set(preset, url)
+        return url
+      }
     } catch {
       /* try next */
     }
   }
+  probeCache.set(preset, null)
   return null
 }

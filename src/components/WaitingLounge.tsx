@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { ORDERS_EVENT, refreshOrders, type Order } from '../data/orders'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { ORDERS_EVENT, type Order } from '../data/orders'
+import { startOrdersPoll } from '../lib/pollOrders'
 import {
   DROP_CARDS,
   INVENTORY_EVENT,
@@ -33,8 +34,11 @@ import {
   unlockGambleAudio,
 } from '../lib/gambleAudio'
 import { WrapPokeCard } from './WrapPokeCard'
-import { DropCutscene } from './DropCutscene'
 import './WaitingLounge.css'
+
+const DropCutscene = lazy(() =>
+  import('./DropCutscene').then((m) => ({ default: m.DropCutscene })),
+)
 
 const SYMBOLS = ['🌯', '🌶️', '🥑', '🌽', '🥬', '🍅', '🧅', '💥', '⭐', '💀'] as const
 type Symbol = (typeof SYMBOLS)[number]
@@ -109,18 +113,19 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   }, [])
 
   useEffect(() => {
-    const sync = () => {
-      void refreshOrders().then((list) => {
-        const found = list.find((item) => item.id === orderId) || null
-        setOrder(found)
+    const syncFromCache = () => {
+      void import('../data/orders').then(({ loadOrders }) => {
+        setOrder(loadOrders().find((item) => item.id === orderId) || null)
       })
     }
-    sync()
-    window.addEventListener(ORDERS_EVENT, sync)
-    const id = window.setInterval(sync, 2000)
+    syncFromCache()
+    window.addEventListener(ORDERS_EVENT, syncFromCache)
+    const stop = startOrdersPoll((list) => {
+      setOrder(list.find((item) => item.id === orderId) || null)
+    })
     return () => {
-      window.removeEventListener(ORDERS_EVENT, sync)
-      window.clearInterval(id)
+      window.removeEventListener(ORDERS_EVENT, syncFromCache)
+      stop()
     }
   }, [orderId])
 
@@ -534,7 +539,9 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
       </main>
 
       {reveal && (
-        <DropCutscene card={reveal} onDone={closeReveal} />
+        <Suspense fallback={<div className="lounge-cutscene-boot">… edit loading …</div>}>
+          <DropCutscene card={reveal} onDone={closeReveal} />
+        </Suspense>
       )}
 
       {achievement && (

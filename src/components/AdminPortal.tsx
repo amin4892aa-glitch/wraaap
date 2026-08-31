@@ -5,9 +5,9 @@ import {
   ORDERS_KEY,
   STATUS_LABEL,
   formatOrderTime,
-  refreshOrders,
   type Order,
 } from '../data/orders'
+import { startOrdersPoll } from '../lib/pollOrders'
 import { BudgetPlanner } from './BudgetPlanner'
 import './AdminPortal.css'
 
@@ -20,20 +20,20 @@ export function AdminPortal({ onHome }: Props) {
   const [tab, setTab] = useState<'overview' | 'budget'>('overview')
 
   useEffect(() => {
-    const refresh = () => {
-      void refreshOrders().then(setOrders)
+    const refreshLocal = () => {
+      void import('../data/orders').then(({ loadOrders }) => setOrders(loadOrders()))
     }
-    refresh()
+    refreshLocal()
     const onStorage = (event: StorageEvent) => {
-      if (event.key === ORDERS_KEY || event.key === null) refresh()
+      if (event.key === ORDERS_KEY || event.key === null) refreshLocal()
     }
-    window.addEventListener(ORDERS_EVENT, refresh)
+    window.addEventListener(ORDERS_EVENT, refreshLocal)
     window.addEventListener('storage', onStorage)
-    const timer = window.setInterval(refresh, 2000)
+    const stop = startOrdersPoll(setOrders)
     return () => {
-      window.removeEventListener(ORDERS_EVENT, refresh)
+      window.removeEventListener(ORDERS_EVENT, refreshLocal)
       window.removeEventListener('storage', onStorage)
-      window.clearInterval(timer)
+      stop()
     }
   }, [])
 

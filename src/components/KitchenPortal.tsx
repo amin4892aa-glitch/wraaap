@@ -3,12 +3,12 @@ import {
   ORDERS_EVENT,
   ORDERS_KEY,
   clearFinishedOrders,
-  refreshOrders,
   removeOrder,
   updateOrderStatus,
   type Order,
   type OrderStatus,
 } from '../data/orders'
+import { startOrdersPoll } from '../lib/pollOrders'
 import './KitchenPortal.css'
 
 const OrderTicket3D = lazy(() =>
@@ -26,20 +26,20 @@ export function KitchenPortal({ onHome }: Props) {
   const [filter, setFilter] = useState<Filter>('alle')
 
   useEffect(() => {
-    const refresh = () => {
-      void refreshOrders().then(setOrders)
+    const refreshLocal = () => {
+      void import('../data/orders').then(({ loadOrders }) => setOrders(loadOrders()))
     }
-    refresh()
+    refreshLocal()
     const onStorage = (event: StorageEvent) => {
-      if (event.key === ORDERS_KEY || event.key === null) refresh()
+      if (event.key === ORDERS_KEY || event.key === null) refreshLocal()
     }
-    window.addEventListener(ORDERS_EVENT, refresh)
+    window.addEventListener(ORDERS_EVENT, refreshLocal)
     window.addEventListener('storage', onStorage)
-    const timer = window.setInterval(refresh, 2000)
+    const stop = startOrdersPoll(setOrders)
     return () => {
-      window.removeEventListener(ORDERS_EVENT, refresh)
+      window.removeEventListener(ORDERS_EVENT, refreshLocal)
       window.removeEventListener('storage', onStorage)
-      window.clearInterval(timer)
+      stop()
     }
   }, [])
 

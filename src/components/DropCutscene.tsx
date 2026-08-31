@@ -581,7 +581,7 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
             src={videoSrc}
             playsInline
             muted={false}
-            preload="auto"
+            preload="metadata"
             onEnded={finishToCard}
             onError={() => setUseVideo(false)}
           />
