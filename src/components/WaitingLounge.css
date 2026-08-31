@@ -5,7 +5,7 @@
   --punk: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   --hand: 'Comic Sans MS', 'Segoe Print', cursive;
   --mono: 'Courier New', Courier, ui-monospace, monospace;
-  --lounge-header-h: 58px;
+  --lounge-header-h: 56px;
   --lounge-chrome-top: max(calc(env(safe-area-inset-top) + var(--lounge-header-h)), 62px);
 
   min-height: 100svh;
@@ -36,17 +36,26 @@
 }
 
 .lounge-top {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 12px;
+  gap: 12px;
   min-height: var(--lounge-header-h);
-  padding: 12px 18px;
+  padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
   border-bottom: 3px solid #f4efe6;
 }
 
+.lounge-top-left {
+  justify-self: start;
+  min-width: 0;
+}
+
+.lounge-top-right {
+  justify-self: end;
+  min-width: 0;
+}
+
 .lounge-brand {
-  flex-shrink: 0;
   border: 0;
   background: #f4efe6;
   color: #111;
@@ -57,21 +66,23 @@
   cursor: pointer;
   transform: rotate(-1.5deg);
   box-shadow: 3px 3px 0 var(--red);
+  white-space: nowrap;
 }
 
 .lounge-stamp {
-  margin: 0 auto;
-  flex: 1 1 120px;
-  min-width: 0;
+  margin: 0;
+  justify-self: center;
   text-align: center;
   display: inline-block;
   background: var(--red);
   color: #fff;
-  padding: 5px 10px;
+  padding: 6px 12px;
   font-family: var(--mono);
-  font-size: clamp(0.58rem, 2.4vw, 0.68rem);
+  font-size: clamp(0.58rem, 2.2vw, 0.68rem);
   letter-spacing: 0.14em;
+  white-space: nowrap;
   transform: rotate(-2deg);
+  max-width: 100%;
 }
 
 .lounge-order-ready .lounge-stamp {
@@ -87,22 +98,47 @@
 }
 
 .lounge-ghost {
-  flex-shrink: 0;
   border: 2px solid #f4efe6;
   background: transparent;
   color: #f4efe6;
   font-family: var(--mono);
-  font-size: clamp(0.62rem, 2.2vw, 0.72rem);
+  font-size: clamp(0.62rem, 2vw, 0.72rem);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 8px 10px;
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--red);
+  white-space: nowrap;
 }
 
 .lounge-ghost:hover {
   background: #f4efe6;
   color: #111;
+}
+
+@media (max-width: 640px) {
+  .lounge-top {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'brand order'
+      'stamp stamp';
+    gap: 10px 12px;
+    --lounge-header-h: 88px;
+  }
+
+  .lounge-top-left {
+    grid-area: brand;
+  }
+
+  .lounge-stamp {
+    grid-area: stamp;
+    justify-self: center;
+    transform: rotate(-1deg);
+  }
+
+  .lounge-top-right {
+    grid-area: order;
+  }
 }
 
 .lounge-main {

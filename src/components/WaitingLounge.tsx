@@ -432,13 +432,17 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
     <div className={`lounge ${order?.status === 'fertig' ? 'lounge-order-ready' : ''}`}>
       <div className="lounge-noise" aria-hidden />
       <header className="lounge-top">
-        <button type="button" className="lounge-brand" onClick={onHome}>
-          WRAAAP
-        </button>
+        <div className="lounge-top-left">
+          <button type="button" className="lounge-brand" onClick={onHome}>
+            WRAAAP
+          </button>
+        </div>
         <p className="lounge-stamp">WAIT · LOUNGE</p>
-        <button type="button" className="lounge-ghost" onClick={onOrderAgain}>
-          Order again
-        </button>
+        <div className="lounge-top-right">
+          <button type="button" className="lounge-ghost" onClick={onOrderAgain}>
+            Order again
+          </button>
+        </div>
       </header>
 
       <LoungeMusicPlayer />
