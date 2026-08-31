@@ -9,6 +9,7 @@ import {
   type OrderStatus,
 } from '../data/orders'
 import { startOrdersPoll } from '../lib/pollOrders'
+import './PortalChrome.css'
 import './KitchenPortal.css'
 
 const OrderTicket3D = lazy(() =>
@@ -65,16 +66,18 @@ export function KitchenPortal({ onHome, onLock }: Props) {
 
   return (
     <div className="kitchen">
-      <header className="kitchen-chrome">
-        <button type="button" className="kitchen-home" onClick={onHome}>
-          WRAAAP ©2026
-        </button>
-        <span className="kitchen-label">Kitchen</span>
-        <div className="kitchen-chrome-actions">
-          <button type="button" onClick={onHome}>
+      <header className="portal-chrome kitchen-chrome">
+        <div className="portal-chrome-left">
+          <button type="button" className="portal-chrome-brand" onClick={onHome}>
+            WRAAAP ©2026
+          </button>
+          <span className="portal-chrome-title">Kitchen</span>
+        </div>
+        <div className="portal-chrome-utils">
+          <button type="button" className="portal-chrome-link" onClick={onHome}>
             Portals
           </button>
-          <button type="button" className="kitchen-lock" onClick={onLock}>
+          <button type="button" className="portal-chrome-lock" onClick={onLock}>
             Lock
           </button>
         </div>

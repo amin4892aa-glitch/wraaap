@@ -10,6 +10,7 @@ import {
 import { PROMO_CODES } from '../data/promoCodes'
 import { startOrdersPoll } from '../lib/pollOrders'
 import { BudgetPlanner } from './BudgetPlanner'
+import './PortalChrome.css'
 import './AdminPortal.css'
 
 type Props = {
@@ -64,12 +65,14 @@ export function AdminPortal({ onHome, onLock }: Props) {
 
   return (
     <div className="admin">
-      <header className="admin-chrome">
-        <button type="button" className="admin-home" onClick={onHome}>
-          WRAAAP ©2026
-        </button>
-        <span className="admin-label">Admin</span>
-        <nav className="admin-tabs">
+      <header className="portal-chrome admin-chrome">
+        <div className="portal-chrome-left">
+          <button type="button" className="portal-chrome-brand" onClick={onHome}>
+            WRAAAP ©2026
+          </button>
+          <span className="portal-chrome-title">Admin</span>
+        </div>
+        <nav className="portal-chrome-nav admin-tabs">
           <button
             type="button"
             className={tab === 'overview' ? 'active' : ''}
@@ -91,13 +94,15 @@ export function AdminPortal({ onHome, onLock }: Props) {
           >
             Codes
           </button>
-          <button type="button" onClick={onHome}>
+        </nav>
+        <div className="portal-chrome-utils">
+          <button type="button" className="portal-chrome-link" onClick={onHome}>
             Portals
           </button>
-          <button type="button" className="admin-lock" onClick={onLock}>
+          <button type="button" className="portal-chrome-lock" onClick={onLock}>
             Lock
           </button>
-        </nav>
+        </div>
       </header>
 
       {tab === 'overview' && (

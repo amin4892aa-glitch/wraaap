@@ -16,54 +16,6 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.kitchen-chrome {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px 14px;
-  align-items: center;
-  padding: 16px 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.kitchen-home,
-.kitchen-chrome-actions button {
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.65);
-  font: inherit;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-size: 0.62rem;
-  cursor: pointer;
-}
-
-.kitchen-label {
-  justify-self: center;
-  color: rgba(255, 255, 255, 0.85);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-size: 0.62rem;
-}
-
-.kitchen-chrome-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.kitchen-lock {
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 6px 10px;
-}
-
-.kitchen-lock:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
 .kitchen-shell {
   position: relative;
   z-index: 1;
