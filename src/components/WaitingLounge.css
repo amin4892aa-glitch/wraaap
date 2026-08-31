@@ -252,6 +252,16 @@
   color: #f4efe6;
 }
 
+.lounge-edit-lock {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--punk);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffb020;
+}
+
 .bandit {
   display: grid;
   gap: 12px;

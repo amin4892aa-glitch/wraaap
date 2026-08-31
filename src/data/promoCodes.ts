@@ -2,12 +2,18 @@ export const CHIPS_KEY = 'wraaap-chips'
 export const PROMO_USED_KEY = 'wraaap-promos-used'
 export const START_CHIPS = 100
 
+export const EDIT_GUARANTEE_KEY = 'wraaap-edit-guarantee'
+
 export type PromoCode = {
   code: string
   chips: number
   blurb: string
   /** Optional card grant (edit preview) */
   grantCard?: string
+  /** Next bandit pull is 100% an edit-tier drop */
+  guaranteeEdit?: boolean
+  /** Play a video edit immediately on redeem */
+  instantEdit?: boolean
   /** Can redeem again — replays cutscene, chips only once */
   replayable?: boolean
 }
@@ -26,6 +32,13 @@ export const PROMO_CODES: PromoCode[] = [
   { code: 'BANDIT', chips: 90, blurb: 'one-arm funding' },
   { code: 'SOLRNG', chips: 200, blurb: 'sol edit cash' },
   { code: 'TIKTOK', chips: 110, blurb: 'cutscene money' },
+  {
+    code: 'EDIT',
+    chips: 25,
+    blurb: 'guaranteed video edit now',
+    instantEdit: true,
+    replayable: true,
+  },
   {
     code: 'ESPRESSO',
     chips: 25,
@@ -91,12 +104,42 @@ export function saveUsedPromos(codes: string[]) {
   localStorage.setItem(PROMO_USED_KEY, JSON.stringify(codes))
 }
 
+export function loadEditGuarantee() {
+  try {
+    const n = Number(localStorage.getItem(EDIT_GUARANTEE_KEY) || '0')
+    return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0
+  } catch {
+    return 0
+  }
+}
+
+export function saveEditGuarantee(count: number) {
+  localStorage.setItem(EDIT_GUARANTEE_KEY, String(Math.max(0, Math.floor(count))))
+}
+
+export function addEditGuarantee(amount = 1) {
+  const next = loadEditGuarantee() + amount
+  saveEditGuarantee(next)
+  return next
+}
+
+/** True if a guaranteed edit was consumed for this pull. */
+export function consumeEditGuarantee() {
+  const n = loadEditGuarantee()
+  if (n <= 0) return false
+  saveEditGuarantee(n - 1)
+  return true
+}
+
 export function redeemPromo(input: string): {
   ok: boolean
   message: string
   chips?: number
   nextBalance?: number
   grantCard?: string
+  guaranteeEdit?: boolean
+  instantEdit?: boolean
+  editGuarantee?: number
 } {
   const code = input.trim().toUpperCase().replace(/\s+/g, '')
   if (!code) return { ok: false, message: 'enter a code' }
@@ -116,18 +159,36 @@ export function redeemPromo(input: string): {
   let gained = 0
   if (!already) {
     gained = promo.chips
-    balance += promo.chips
-    saveChips(balance)
+    if (gained) {
+      balance += promo.chips
+      saveChips(balance)
+    }
     saveUsedPromos([...used, code])
   }
 
+  let editGuarantee = loadEditGuarantee()
+  if (promo.guaranteeEdit) {
+    editGuarantee = addEditGuarantee(1)
+  }
+
+  const locked = promo.instantEdit
+    ? `DROP · ${promo.blurb}`
+    : promo.guaranteeEdit
+      ? `LOCKED IN · ${promo.blurb}`
+      : already
+        ? `replay · ${promo.blurb}`
+        : gained
+          ? `+${gained} · ${promo.blurb}`
+          : promo.blurb
+
   return {
     ok: true,
-    message: already
-      ? `replay · ${promo.blurb}`
-      : `+${gained} · ${promo.blurb}`,
+    message: locked,
     chips: gained,
     nextBalance: balance,
     grantCard: promo.grantCard,
+    guaranteeEdit: promo.guaranteeEdit,
+    instantEdit: promo.instantEdit,
+    editGuarantee,
   }
 }

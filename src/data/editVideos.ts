@@ -17,29 +17,15 @@ export function editVideoUrls(preset: string): string[] {
   return EDIT_VIDEO_CANDIDATES[preset as EditVideoKey].map((file) => `${prefix}${file}`)
 }
 
-/** Focuswater always ships with public/edits/focuswater.mp4 — skip flaky HEAD probes. */
-export function editVideoUrlDirect(preset: string): string | null {
-  const urls = editVideoUrls(preset)
-  return urls[0] ?? null
+/** Files that actually ship in public/edits — skip HEAD (fails on iOS/Safari). */
+const SHIPPED_EDIT_VIDEOS = new Set<EditVideoKey>(['mamacita', 'focuswater'])
+
+export function hasShippedEditVideo(preset: string) {
+  return SHIPPED_EDIT_VIDEOS.has(preset as EditVideoKey)
 }
 
-/** HEAD request — first existing render in /public/edits. Cached per session. */
-const probeCache = new Map<string, string | null>()
-
-export async function probeEditVideo(preset: string): Promise<string | null> {
-  if (probeCache.has(preset)) return probeCache.get(preset) ?? null
-
-  for (const url of editVideoUrls(preset)) {
-    try {
-      const res = await fetch(url, { method: 'HEAD', cache: 'force-cache' })
-      if (res.ok) {
-        probeCache.set(preset, url)
-        return url
-      }
-    } catch {
-      /* try next */
-    }
-  }
-  probeCache.set(preset, null)
-  return null
+export function editVideoUrlDirect(preset: string): string | null {
+  if (!hasShippedEditVideo(preset)) return null
+  const urls = editVideoUrls(preset)
+  return urls[0] ?? null
 }

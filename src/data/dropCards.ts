@@ -262,6 +262,25 @@ export function rollCard(): DropCard {
   const rarity = rollRarity()
   const pool = DROP_CARDS.filter((card) => card.rarity === rarity)
   const list = pool.length ? pool : DROP_CARDS.filter((c) => c.rarity === 'common')
+  return pickWeighted(list)
+}
+
+export const EDIT_RARITIES = new Set<CardRarity>(['epic', 'legendary', 'mythic', 'divine'])
+
+/** Cards that actually ship a cutscene video (phone-safe). */
+export const VIDEO_EDIT_IDS = ['sunset-omen', 'focus-water'] as const
+
+/** 100% a real video edit, not a random epic ingredient. */
+export function rollEditCard(): DropCard {
+  const pool = VIDEO_EDIT_IDS.map((id) => getCard(id)).filter(
+    (card): card is DropCard => !!card,
+  )
+  if (pool.length) return pickWeighted(pool)
+  const fallback = DROP_CARDS.filter((card) => EDIT_RARITIES.has(card.rarity) && card.kind === 'wrap')
+  return pickWeighted(fallback.length ? fallback : DROP_CARDS)
+}
+
+function pickWeighted(list: DropCard[]): DropCard {
   const total = list.reduce((sum, card) => sum + card.weight, 0)
   let tick = rng01() * total
   for (const card of list) {
@@ -316,16 +335,14 @@ export function inventoryCounts(owned: OwnedCard[]) {
 }
 
 /** Bandit hit types — only these count as a real roll for edit replay. */
-export const ROLL_SOURCES = new Set(['jackpot', 'triple', 'pair', 'nudge'])
+export const ROLL_SOURCES = new Set(['jackpot', 'triple', 'pair', 'nudge', 'guaranteed'])
 
 export function hasRolledCard(owned: OwnedCard[], cardId: string) {
   return owned.some((row) => row.cardId === cardId && ROLL_SOURCES.has(row.from))
 }
 
-const REPLAY_RARITIES = new Set<CardRarity>(['legendary', 'mythic', 'divine', 'epic'])
-
 export function canReplayEdit(owned: OwnedCard[], card: DropCard) {
-  return REPLAY_RARITIES.has(card.rarity) && hasRolledCard(owned, card.id)
+  return EDIT_RARITIES.has(card.rarity) && hasRolledCard(owned, card.id)
 }
 
 export function uniqueWrapCount(owned: OwnedCard[]) {

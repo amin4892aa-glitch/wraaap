@@ -39,6 +39,11 @@ body {
   width: 100%;
 }
 
+html.edit-open #root {
+  overflow: hidden;
+  height: 100dvh;
+}
+
 a {
   color: #fff;
 }

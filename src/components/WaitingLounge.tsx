@@ -11,6 +11,7 @@ import {
   inventoryCounts,
   loadInventory,
   rollCard,
+  rollEditCard,
   shouldDropCard,
   uniqueWrapCount,
   type DropCard,
@@ -22,7 +23,13 @@ import {
   syncAchievementCosmetics,
   unlockAchievement,
 } from '../data/achievements'
-import { loadChips, redeemPromo, saveChips } from '../data/promoCodes'
+import {
+  consumeEditGuarantee,
+  loadChips,
+  loadEditGuarantee,
+  redeemPromo,
+  saveChips,
+} from '../data/promoCodes'
 import { resetLoungeCardProgress } from '../lib/resetWraaapProgress'
 import { isPortalUnlocked } from '../lib/portalAuth'
 import {
@@ -95,6 +102,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   const [chips, setChips] = useState(() => loadChips())
   const [promo, setPromo] = useState('')
   const [promoMsg, setPromoMsg] = useState<string | null>(null)
+  const [editGuarantee, setEditGuarantee] = useState(() => loadEditGuarantee())
   const [reels, setReels] = useState<[Symbol, Symbol, Symbol]>(['🌯', '🥑', '🌶️'])
   const [spinning, setSpinning] = useState(false)
   const [leverDown, setLeverDown] = useState(false)
@@ -112,6 +120,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
 
   useEffect(() => {
     syncAchievementCosmetics()
+    void import('./DropCutscene')
   }, [])
 
   useEffect(() => {
@@ -172,6 +181,19 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
     if (result.ok && typeof result.nextBalance === 'number') {
       setChips(result.nextBalance)
       setPromo('')
+    }
+    if (result.ok && typeof result.editGuarantee === 'number') {
+      setEditGuarantee(result.editGuarantee)
+    }
+    if (result.ok && result.instantEdit) {
+      if (spinning || reveal || achievement) return
+      unlockGambleAudio()
+      const card = rollEditCard()
+      const nextOwned = addToInventory(card.id, 'guaranteed')
+      setOwned(nextOwned)
+      void import('./DropCutscene').finally(() => setReveal(card))
+      maybeUnlockWrapCursor(nextOwned)
+      return
     }
     if (result.ok && result.grantCard) {
       unlockGambleAudio()
@@ -298,12 +320,13 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
           setSpinning(false)
           window.setTimeout(() => setLeverDown(false), 180)
 
-          if (kind === 'bust') playBust()
-          else if (!shouldDropCard(kind)) playWin(kind)
+          const guaranteed = consumeEditGuarantee()
+          if (guaranteed) setEditGuarantee(loadEditGuarantee())
+          const dropEdit = guaranteed || shouldDropCard(kind)
 
-          if (shouldDropCard(kind)) {
-            const card = rollCard()
-            const nextOwned = addToInventory(card.id, kind)
+          if (dropEdit) {
+            const card = guaranteed ? rollEditCard() : rollCard()
+            const nextOwned = addToInventory(card.id, guaranteed ? 'guaranteed' : kind)
             setOwned(nextOwned)
             window.setTimeout(() => {
               // Cutscene owns edit audio — don't start bed here (doubles under video edits)
@@ -311,6 +334,10 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
               setReveal(card)
             }, 280)
             maybeUnlockWrapCursor(nextOwned)
+          } else if (kind === 'bust') {
+            playBust()
+          } else {
+            playWin(kind)
           }
         }
       }, ms)
@@ -361,7 +388,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
               <input
                 value={promo}
                 onChange={(event) => setPromo(event.target.value)}
-                placeholder="WRAAAP / SOLRNG / …"
+                placeholder="EDIT / WRAAAP / …"
                 disabled={spinning || !!reveal}
                 autoComplete="off"
                 spellCheck={false}
@@ -371,6 +398,12 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
               Redeem
             </button>
             {promoMsg && <p>{promoMsg}</p>}
+            {editGuarantee > 0 && (
+              <p className="lounge-edit-lock">
+                next pull = guaranteed edit
+                {editGuarantee > 1 ? ` ×${editGuarantee}` : ''}
+              </p>
+            )}
           </form>
 
           <div className="bandit">

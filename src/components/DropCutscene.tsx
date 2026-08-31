@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { DropCard } from '../data/dropCards'
 import { RARITY_META } from '../data/dropCards'
 import {
@@ -9,7 +10,7 @@ import {
   reelArt,
   type Shot,
 } from '../data/editReels'
-import { editVideoUrlDirect, probeEditVideo } from '../data/editVideos'
+import { editVideoUrls, hasShippedEditVideo } from '../data/editVideos'
 import {
   playCutBeat,
   playDivineReveal,
@@ -402,8 +403,10 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
   const [videoReady, setVideoReady] = useState(false)
   const [useVideo, setUseVideo] = useState(false)
   const [needsTap, setNeedsTap] = useState(false)
+  const [srcIndex, setSrcIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const videoStartedRef = useRef(false)
+  const candidates = useMemo(() => editVideoUrls(preset), [preset])
 
   const isDivine = preset === 'divine'
   const isHeadlock = preset === 'headlock'
@@ -425,69 +428,83 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
               ? 'legendary'
               : 'normal'
 
-  // Prefer rendered MP4 in public/edits/ (focuswater: always use bundled file)
+  // Prefer shipped MP4s — no HEAD probe (iOS Safari often never fires canplay after HEAD).
   useEffect(() => {
-    let cancelled = false
     setVideoReady(false)
     setUseVideo(false)
     setVideoSrc(null)
     setNeedsTap(false)
+    setSrcIndex(0)
     videoStartedRef.current = false
     if (!isGod) {
       setVideoReady(true)
       return
     }
-    if (isFocuswater) {
-      const url = editVideoUrlDirect('focuswater')
-      if (!cancelled && url) {
-        setVideoSrc(url)
-        setUseVideo(true)
-      }
-      if (!cancelled) setVideoReady(true)
+    if (hasShippedEditVideo(preset) && candidates[0]) {
+      setVideoSrc(candidates[0])
+      setUseVideo(true)
+      setNeedsTap(true)
+      setVideoReady(true)
       return
     }
-    ;(async () => {
-      const url = await probeEditVideo(preset)
-      if (cancelled) return
-      if (url) {
-        setVideoSrc(url)
-        setUseVideo(true)
-      }
-      setVideoReady(true)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [isGod, isFocuswater, preset])
+    setVideoReady(true)
+  }, [isGod, preset, candidates])
 
-  function startVideoPlayback(force = false) {
+  function bindVideo(el: HTMLVideoElement | null) {
+    videoRef.current = el
+    if (!el) return
+    el.setAttribute('playsinline', 'true')
+    el.setAttribute('webkit-playsinline', 'true')
+    el.playsInline = true
+    el.muted = true
+    el.defaultMuted = true
+  }
+
+  function startVideoPlayback(fromTap = false) {
     const el = videoRef.current
     if (!el) return
-    if (videoStartedRef.current && !force) return
     unlockGambleAudio()
     stopEditBed(0.05)
-    el.muted = false
-    if (el.currentTime < 0.05) el.currentTime = 0
+    if (fromTap) {
+      el.muted = false
+      el.defaultMuted = false
+    } else {
+      el.muted = true
+      el.defaultMuted = true
+    }
+    if (el.currentTime < 0.05) {
+      try {
+        el.currentTime = 0
+      } catch {
+        /* ignore */
+      }
+    }
     const play = el.play()
-    if (play && typeof play.catch === 'function') {
+    if (play && typeof play.then === 'function') {
       play
         .then(() => {
           videoStartedRef.current = true
-          setNeedsTap(false)
+          if (fromTap) {
+            setNeedsTap(false)
+            el.muted = false
+          }
         })
         .catch(() => {
+          if (fromTap) {
+            setNeedsTap(true)
+            return
+          }
           el.muted = true
           el.play()
             .then(() => {
               videoStartedRef.current = true
-              if (isFocuswater) startEditBed('focuswater')
               setNeedsTap(true)
             })
-            .catch(() => setUseVideo(false))
+            .catch(() => setNeedsTap(true))
         })
     } else {
       videoStartedRef.current = true
-      setNeedsTap(false)
+      if (fromTap) setNeedsTap(false)
     }
   }
 
@@ -509,6 +526,13 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
       }, 60)
     }
   }, [isGod, isFocuswater, preset, videoReady, useVideo])
+
+  useEffect(() => {
+    document.documentElement.classList.add('edit-open')
+    return () => {
+      document.documentElement.classList.remove('edit-open')
+    }
+  }, [])
 
   const finishToCard = () => {
     if (showCard) return
@@ -576,7 +600,7 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
       beat?.cut === 'vhs' ||
       beat?.cut === 'rgb-split')
 
-  return (
+  const node = (
     <div
       className={[
         'drop-cut',
@@ -598,36 +622,40 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
       aria-modal="true"
     >
       {!showCard && useVideo && videoSrc ? (
-        <div className="drop-cut-stage drop-cut-video-stage" aria-hidden>
+        <div className="drop-cut-stage drop-cut-video-stage" aria-hidden={!needsTap}>
           <video
-            ref={videoRef}
+            ref={bindVideo}
             className="drop-cut-video"
             src={videoSrc}
             playsInline
-            muted={false}
+            muted
             preload="auto"
+            autoPlay
             onCanPlay={() => {
-              if (!showCard && useVideo) startVideoPlayback()
+              if (!showCard && useVideo && !videoStartedRef.current) {
+                startVideoPlayback(false)
+              }
             }}
             onEnded={finishToCard}
-            onError={() => setUseVideo(false)}
+            onError={() => {
+              const next = srcIndex + 1
+              if (next < candidates.length) {
+                setSrcIndex(next)
+                setVideoSrc(candidates[next])
+                videoStartedRef.current = false
+                return
+              }
+              setUseVideo(false)
+              setNeedsTap(false)
+            }}
           />
           {needsTap && (
             <button
               type="button"
               className="drop-cut-tap-play"
-              onClick={() => {
-                const el = videoRef.current
-                if (el) {
-                  el.muted = false
-                  stopEditBed(0.08)
-                  void el.play()
-                }
-                setNeedsTap(false)
-                videoStartedRef.current = true
-              }}
+              onClick={() => startVideoPlayback(true)}
             >
-              Tap to play · FOCUSWATER
+              Tap to play
             </button>
           )}
           <button
@@ -715,4 +743,7 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
       )}
     </div>
   )
+
+  if (typeof document === 'undefined') return node
+  return createPortal(node, document.body)
 }
