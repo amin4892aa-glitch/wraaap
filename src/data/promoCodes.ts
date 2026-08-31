@@ -2,7 +2,8 @@ export const CHIPS_KEY = 'wraaap-chips'
 export const PROMO_USED_KEY = 'wraaap-promos-used'
 export const START_CHIPS = 100
 
-export const EDIT_GUARANTEE_KEY = 'wraaap-edit-guarantee'
+export const LUCK_PULLS_KEY = 'wraaap-luck-pulls'
+export const LUCK_MULT_KEY = 'wraaap-luck-mult'
 
 export type PromoCode = {
   code: string
@@ -10,10 +11,8 @@ export type PromoCode = {
   blurb: string
   /** Optional card grant (edit preview) */
   grantCard?: string
-  /** Next bandit pull is 100% an edit-tier drop */
-  guaranteeEdit?: boolean
-  /** Play a video edit immediately on redeem */
-  instantEdit?: boolean
+  /** Next pull(s) use this luck multiplier (Sol RNG style) */
+  luckBoost?: number
   /** Can redeem again — replays cutscene, chips only once */
   replayable?: boolean
 }
@@ -35,8 +34,8 @@ export const PROMO_CODES: PromoCode[] = [
   {
     code: 'EDIT',
     chips: 25,
-    blurb: 'guaranteed video edit now',
-    instantEdit: true,
+    blurb: 'next pull 100× luck',
+    luckBoost: 100,
     replayable: true,
   },
   {
@@ -104,31 +103,42 @@ export function saveUsedPromos(codes: string[]) {
   localStorage.setItem(PROMO_USED_KEY, JSON.stringify(codes))
 }
 
-export function loadEditGuarantee() {
+export function loadLuckPulls() {
   try {
-    const n = Number(localStorage.getItem(EDIT_GUARANTEE_KEY) || '0')
+    const n = Number(localStorage.getItem(LUCK_PULLS_KEY) || '0')
     return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0
   } catch {
     return 0
   }
 }
 
-export function saveEditGuarantee(count: number) {
-  localStorage.setItem(EDIT_GUARANTEE_KEY, String(Math.max(0, Math.floor(count))))
+export function loadLuckMult() {
+  try {
+    const n = Number(localStorage.getItem(LUCK_MULT_KEY) || '1')
+    return Number.isFinite(n) && n > 1 ? n : 100
+  } catch {
+    return 100
+  }
 }
 
-export function addEditGuarantee(amount = 1) {
-  const next = loadEditGuarantee() + amount
-  saveEditGuarantee(next)
+export function saveLuckPulls(count: number, mult = 100) {
+  localStorage.setItem(LUCK_PULLS_KEY, String(Math.max(0, Math.floor(count))))
+  localStorage.setItem(LUCK_MULT_KEY, String(Math.max(1, Math.floor(mult))))
+}
+
+export function addLuckPulls(amount = 1, mult = 100) {
+  const next = loadLuckPulls() + amount
+  saveLuckPulls(next, mult)
   return next
 }
 
-/** True if a guaranteed edit was consumed for this pull. */
-export function consumeEditGuarantee() {
-  const n = loadEditGuarantee()
-  if (n <= 0) return false
-  saveEditGuarantee(n - 1)
-  return true
+/** Luck multiplier for this pull (1 = normal). Consumes one boosted pull. */
+export function consumeLuckBoost() {
+  const n = loadLuckPulls()
+  if (n <= 0) return 1
+  const mult = loadLuckMult()
+  saveLuckPulls(n - 1, mult)
+  return mult
 }
 
 export function redeemPromo(input: string): {
@@ -137,9 +147,8 @@ export function redeemPromo(input: string): {
   chips?: number
   nextBalance?: number
   grantCard?: string
-  guaranteeEdit?: boolean
-  instantEdit?: boolean
-  editGuarantee?: number
+  luckBoost?: number
+  luckPulls?: number
 } {
   const code = input.trim().toUpperCase().replace(/\s+/g, '')
   if (!code) return { ok: false, message: 'enter a code' }
@@ -166,20 +175,18 @@ export function redeemPromo(input: string): {
     saveUsedPromos([...used, code])
   }
 
-  let editGuarantee = loadEditGuarantee()
-  if (promo.guaranteeEdit) {
-    editGuarantee = addEditGuarantee(1)
+  let luckPulls = loadLuckPulls()
+  if (promo.luckBoost) {
+    luckPulls = addLuckPulls(1, promo.luckBoost)
   }
 
-  const locked = promo.instantEdit
-    ? `DROP · ${promo.blurb}`
-    : promo.guaranteeEdit
-      ? `LOCKED IN · ${promo.blurb}`
-      : already
-        ? `replay · ${promo.blurb}`
-        : gained
-          ? `+${gained} · ${promo.blurb}`
-          : promo.blurb
+  const locked = promo.luckBoost
+    ? `LOCKED IN · ${promo.luckBoost}× luck · ${promo.blurb}`
+    : already
+      ? `replay · ${promo.blurb}`
+      : gained
+        ? `+${gained} · ${promo.blurb}`
+        : promo.blurb
 
   return {
     ok: true,
@@ -187,8 +194,7 @@ export function redeemPromo(input: string): {
     chips: gained,
     nextBalance: balance,
     grantCard: promo.grantCard,
-    guaranteeEdit: promo.guaranteeEdit,
-    instantEdit: promo.instantEdit,
-    editGuarantee,
+    luckBoost: promo.luckBoost,
+    luckPulls,
   }
 }

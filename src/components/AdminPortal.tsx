@@ -7,6 +7,8 @@ import {
   formatOrderTime,
   type Order,
 } from '../data/orders'
+import { PROMO_CODES } from '../data/promoCodes'
+import { getCard } from '../data/dropCards'
 import { startOrdersPoll } from '../lib/pollOrders'
 import { BudgetPlanner } from './BudgetPlanner'
 import './AdminPortal.css'
@@ -15,9 +17,20 @@ type Props = {
   onHome: () => void
 }
 
+type AdminTab = 'overview' | 'budget' | 'codes'
+
+function promoReward(code: (typeof PROMO_CODES)[number]) {
+  if (code.luckBoost) return `next pull ${code.luckBoost}× luck`
+  if (code.grantCard) {
+    const card = getCard(code.grantCard)
+    return card ? `edit · ${card.name}` : 'edit cutscene'
+  }
+  return 'chips only'
+}
+
 export function AdminPortal({ onHome }: Props) {
   const [orders, setOrders] = useState<Order[]>([])
-  const [tab, setTab] = useState<'overview' | 'budget'>('overview')
+  const [tab, setTab] = useState<AdminTab>('overview')
 
   useEffect(() => {
     const refreshLocal = () => {
@@ -70,13 +83,20 @@ export function AdminPortal({ onHome }: Props) {
           >
             Budget
           </button>
+          <button
+            type="button"
+            className={tab === 'codes' ? 'active' : ''}
+            onClick={() => setTab('codes')}
+          >
+            Codes
+          </button>
           <button type="button" onClick={onHome}>
             Portals
           </button>
         </nav>
       </header>
 
-      {tab === 'overview' ? (
+      {tab === 'overview' && (
         <main className="admin-main">
           <section className="admin-hero">
             <p className="admin-kicker">03 · Operations</p>
@@ -140,7 +160,9 @@ export function AdminPortal({ onHome }: Props) {
             </div>
           </section>
         </main>
-      ) : (
+      )}
+
+      {tab === 'budget' && (
         <main className="admin-budget">
           <section className="admin-hero admin-hero-compact">
             <p className="admin-kicker">Budget line</p>
@@ -150,6 +172,44 @@ export function AdminPortal({ onHome }: Props) {
             </h1>
           </section>
           <BudgetPlanner allowOrder={false} />
+        </main>
+      )}
+
+      {tab === 'codes' && (
+        <main className="admin-main">
+          <section className="admin-hero">
+            <p className="admin-kicker">04 · Lounge</p>
+            <h1>
+              Promo
+              <em> codes.</em>
+            </h1>
+            <p>Redeem in Wait room. Chips are fake. Edit codes play cutscenes.</p>
+          </section>
+
+          <section className="admin-table-wrap">
+            <h2>{PROMO_CODES.length} codes</h2>
+            <div className="admin-table">
+              {PROMO_CODES.map((promo, index) => (
+                <article key={promo.code} className="admin-row admin-code-row">
+                  <span className="admin-row-index">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <strong>{promo.code}</strong>
+                    <span>{promo.blurb}</span>
+                  </div>
+                  <div className="admin-row-meta">
+                    <em>{promoReward(promo)}</em>
+                    <strong>{promo.chips > 0 ? `+${promo.chips}` : '—'}</strong>
+                  </div>
+                  <p className="admin-design">
+                    {promo.replayable ? 'replayable' : 'one-shot'}
+                    {promo.luckBoost ? ` · ${promo.luckBoost}× luck` : ''}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
         </main>
       )}
     </div>

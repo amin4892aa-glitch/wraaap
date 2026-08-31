@@ -11,7 +11,6 @@ import {
   inventoryCounts,
   loadInventory,
   rollCard,
-  rollEditCard,
   shouldDropCard,
   uniqueWrapCount,
   type DropCard,
@@ -24,9 +23,9 @@ import {
   unlockAchievement,
 } from '../data/achievements'
 import {
-  consumeEditGuarantee,
+  consumeLuckBoost,
   loadChips,
-  loadEditGuarantee,
+  loadLuckPulls,
   redeemPromo,
   saveChips,
 } from '../data/promoCodes'
@@ -102,7 +101,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   const [chips, setChips] = useState(() => loadChips())
   const [promo, setPromo] = useState('')
   const [promoMsg, setPromoMsg] = useState<string | null>(null)
-  const [editGuarantee, setEditGuarantee] = useState(() => loadEditGuarantee())
+  const [luckPulls, setLuckPulls] = useState(() => loadLuckPulls())
   const [reels, setReels] = useState<[Symbol, Symbol, Symbol]>(['🌯', '🥑', '🌶️'])
   const [spinning, setSpinning] = useState(false)
   const [leverDown, setLeverDown] = useState(false)
@@ -182,18 +181,8 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
       setChips(result.nextBalance)
       setPromo('')
     }
-    if (result.ok && typeof result.editGuarantee === 'number') {
-      setEditGuarantee(result.editGuarantee)
-    }
-    if (result.ok && result.instantEdit) {
-      if (spinning || reveal || achievement) return
-      unlockGambleAudio()
-      const card = rollEditCard()
-      const nextOwned = addToInventory(card.id, 'guaranteed')
-      setOwned(nextOwned)
-      void import('./DropCutscene').finally(() => setReveal(card))
-      maybeUnlockWrapCursor(nextOwned)
-      return
+    if (result.ok && typeof result.luckPulls === 'number') {
+      setLuckPulls(result.luckPulls)
     }
     if (result.ok && result.grantCard) {
       unlockGambleAudio()
@@ -320,13 +309,13 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
           setSpinning(false)
           window.setTimeout(() => setLeverDown(false), 180)
 
-          const guaranteed = consumeEditGuarantee()
-          if (guaranteed) setEditGuarantee(loadEditGuarantee())
-          const dropEdit = guaranteed || shouldDropCard(kind)
+          const luck = consumeLuckBoost()
+          if (luck > 1) setLuckPulls(loadLuckPulls())
+          const dropCard = shouldDropCard(kind, luck)
 
-          if (dropEdit) {
-            const card = guaranteed ? rollEditCard() : rollCard()
-            const nextOwned = addToInventory(card.id, guaranteed ? 'guaranteed' : kind)
+          if (dropCard) {
+            const card = rollCard(luck)
+            const nextOwned = addToInventory(card.id, luck > 1 ? 'guaranteed' : kind)
             setOwned(nextOwned)
             window.setTimeout(() => {
               // Cutscene owns edit audio — don't start bed here (doubles under video edits)
@@ -398,10 +387,10 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
               Redeem
             </button>
             {promoMsg && <p>{promoMsg}</p>}
-            {editGuarantee > 0 && (
+            {luckPulls > 0 && (
               <p className="lounge-edit-lock">
-                next pull = guaranteed edit
-                {editGuarantee > 1 ? ` ×${editGuarantee}` : ''}
+                next pull = 100× luck
+                {luckPulls > 1 ? ` ×${luckPulls}` : ''}
               </p>
             )}
           </form>

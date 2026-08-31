@@ -194,6 +194,11 @@
   grid-column: 2;
 }
 
+.admin-code-row strong {
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+}
+
 /* Budget planner — same black/white system inside Admin */
 .admin-budget .panel {
   background: rgba(255, 255, 255, 0.03);

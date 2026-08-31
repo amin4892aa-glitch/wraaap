@@ -246,20 +246,21 @@ function rng01() {
   return Math.random()
 }
 
-/** Sol's RNG style: one roll, rarest threshold first */
-export function rollRarity(): CardRarity {
+/** Sol's RNG style: one roll, rarest threshold first. luck=100 → 100× thresholds. */
+export function rollRarity(luck = 1): CardRarity {
   const roll = rng01()
-  if (roll < 1 / 2500) return 'divine'
-  if (roll < 1 / 400) return 'mythic'
-  if (roll < 1 / 120) return 'legendary'
-  if (roll < 1 / 40) return 'epic'
-  if (roll < 1 / 12) return 'rare'
-  if (roll < 0.25) return 'uncommon'
+  const L = Math.max(1, luck)
+  if (roll < Math.min(1, L / 2500)) return 'divine'
+  if (roll < Math.min(1, L / 400)) return 'mythic'
+  if (roll < Math.min(1, L / 120)) return 'legendary'
+  if (roll < Math.min(1, L / 40)) return 'epic'
+  if (roll < Math.min(1, L / 12)) return 'rare'
+  if (roll < Math.min(1, L * 0.25)) return 'uncommon'
   return 'common'
 }
 
-export function rollCard(): DropCard {
-  const rarity = rollRarity()
+export function rollCard(luck = 1): DropCard {
+  const rarity = rollRarity(luck)
   const pool = DROP_CARDS.filter((card) => card.rarity === rarity)
   const list = pool.length ? pool : DROP_CARDS.filter((c) => c.rarity === 'common')
   return pickWeighted(list)
@@ -290,13 +291,17 @@ function pickWeighted(list: DropCard[]): DropCard {
   return list[list.length - 1]
 }
 
-/** Bandit only drops a card on strong hits */
-export function shouldDropCard(kind: 'jackpot' | 'triple' | 'pair' | 'nudge' | 'bust') {
+/** Bandit only drops a card on strong hits. luck multiplies drop chance. */
+export function shouldDropCard(
+  kind: 'jackpot' | 'triple' | 'pair' | 'nudge' | 'bust',
+  luck = 1,
+) {
+  const L = Math.max(1, luck)
   if (kind === 'jackpot') return true
-  if (kind === 'triple') return rng01() < 0.85
-  if (kind === 'pair') return rng01() < 0.22
-  if (kind === 'nudge') return rng01() < 0.08
-  return false
+  if (kind === 'triple') return rng01() < Math.min(1, 0.85 * L)
+  if (kind === 'pair') return rng01() < Math.min(1, 0.22 * L)
+  if (kind === 'nudge') return rng01() < Math.min(1, 0.08 * L)
+  return rng01() < Math.min(1, 0.002 * L)
 }
 
 export function loadInventory(): OwnedCard[] {
