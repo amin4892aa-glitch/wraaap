@@ -43,6 +43,7 @@ import {
   unlockGambleAudio,
 } from '../lib/gambleAudio'
 import { WrapPokeCard } from './WrapPokeCard'
+import { OrderProgressBar } from './OrderProgressBar'
 import './WaitingLounge.css'
 
 const DropCutscene = lazy(() =>
@@ -448,6 +449,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
           <p>{ticketKicker}</p>
           <h1>{order?.customer.name || 'Guest'}</h1>
           <strong className="lounge-id">{orderId || '—'}</strong>
+          <OrderProgressBar status={order?.status} variant="lounge" />
           <em className="lounge-status">{statusLabel}</em>
           <ul>
             {(order?.wrapDesign?.layerLabels || order?.items.map((i) => i.name) || []).map(

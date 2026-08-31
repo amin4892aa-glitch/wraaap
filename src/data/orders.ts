@@ -46,6 +46,17 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   fertig: 'Fertig',
 }
 
+export const ORDER_PROGRESS: Record<OrderStatus, number> = {
+  neu: 25,
+  in_arbeit: 62,
+  fertig: 100,
+}
+
+export function orderProgressPercent(status?: OrderStatus | null) {
+  if (!status) return 0
+  return ORDER_PROGRESS[status]
+}
+
 function normalize(orders: Order[]): Order[] {
   return orders.map((order) => ({
     ...order,

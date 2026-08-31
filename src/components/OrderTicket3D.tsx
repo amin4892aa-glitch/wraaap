@@ -1,4 +1,5 @@
 import { STATUS_LABEL, formatOrderTime, type Order, type OrderStatus } from '../data/orders'
+import { OrderProgressBar } from './OrderProgressBar'
 import './OrderTicket3D.css'
 
 type Props = {
@@ -31,6 +32,8 @@ export function OrderTicket3D({ order, onStatus, onRemove }: Props) {
           {shortId} · {formatOrderTime(order.createdAt)}
           {order.customer.when ? ` · Abholung ${order.customer.when}` : ''}
         </p>
+
+        <OrderProgressBar status={order.status} variant="kitchen" />
 
         {order.wrapDesign && (
           <p className="ticket-style">
