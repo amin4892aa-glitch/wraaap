@@ -192,14 +192,14 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
     unlockGambleAudio()
     const card = getCard(cardId)
     if (!card) return
-    // DropCutscene starts the correct bed / video — avoid double tracks
     const already = loadInventory().some((row) => row.cardId === card.id)
     if (!already) {
       const nextOwned = addToInventory(card.id, 'edit-preview')
       setOwned(nextOwned)
       maybeUnlockWrapCursor(nextOwned)
     }
-    setReveal(card)
+    // Keep user-gesture chain for video+audio autoplay
+    void import('./DropCutscene').finally(() => setReveal(card))
   }
 
   function replayOwnedCard(card: DropCard) {

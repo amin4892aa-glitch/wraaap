@@ -9,7 +9,7 @@ import {
   reelArt,
   type Shot,
 } from '../data/editReels'
-import { probeEditVideo } from '../data/editVideos'
+import { editVideoUrlDirect, probeEditVideo } from '../data/editVideos'
 import {
   playCutBeat,
   playDivineReveal,
@@ -401,7 +401,9 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
   const [videoSrc, setVideoSrc] = useState<string | null>(null)
   const [videoReady, setVideoReady] = useState(false)
   const [useVideo, setUseVideo] = useState(false)
+  const [needsTap, setNeedsTap] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const videoStartedRef = useRef(false)
 
   const isDivine = preset === 'divine'
   const isHeadlock = preset === 'headlock'
@@ -423,14 +425,25 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
               ? 'legendary'
               : 'normal'
 
-  // Prefer a rendered AE/CapCut MP4 when present in public/edits/
+  // Prefer rendered MP4 in public/edits/ (focuswater: always use bundled file)
   useEffect(() => {
     let cancelled = false
     setVideoReady(false)
     setUseVideo(false)
     setVideoSrc(null)
+    setNeedsTap(false)
+    videoStartedRef.current = false
     if (!isGod) {
       setVideoReady(true)
+      return
+    }
+    if (isFocuswater) {
+      const url = editVideoUrlDirect('focuswater')
+      if (!cancelled && url) {
+        setVideoSrc(url)
+        setUseVideo(true)
+      }
+      if (!cancelled) setVideoReady(true)
       return
     }
     ;(async () => {
@@ -445,7 +458,38 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
     return () => {
       cancelled = true
     }
-  }, [isGod, preset])
+  }, [isGod, isFocuswater, preset])
+
+  function startVideoPlayback(force = false) {
+    const el = videoRef.current
+    if (!el) return
+    if (videoStartedRef.current && !force) return
+    unlockGambleAudio()
+    stopEditBed(0.05)
+    el.muted = false
+    if (el.currentTime < 0.05) el.currentTime = 0
+    const play = el.play()
+    if (play && typeof play.catch === 'function') {
+      play
+        .then(() => {
+          videoStartedRef.current = true
+          setNeedsTap(false)
+        })
+        .catch(() => {
+          el.muted = true
+          el.play()
+            .then(() => {
+              videoStartedRef.current = true
+              if (isFocuswater) startEditBed('focuswater')
+              setNeedsTap(true)
+            })
+            .catch(() => setUseVideo(false))
+        })
+    } else {
+      videoStartedRef.current = true
+      setNeedsTap(false)
+    }
+  }
 
   useEffect(() => {
     if (!videoReady) return
@@ -474,27 +518,7 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
     window.setTimeout(() => setShowCard(true), isGod ? 220 : 80)
   }
 
-  // Video path — play rendered edit, then reveal card
-  useEffect(() => {
-    if (!videoReady || !useVideo || !videoSrc || showCard) return
-    unlockGambleAudio()
-    stopEditBed(0.05)
-    const el = videoRef.current
-    if (!el) return
-    el.muted = false
-    el.currentTime = 0
-    const play = el.play()
-    if (play && typeof play.catch === 'function') {
-      play.catch(() => {
-        // Autoplay with sound blocked — fall back to muted + bed
-        el.muted = true
-        if (isFocuswater) startEditBed('focuswater')
-        el.play().catch(() => setUseVideo(false))
-      })
-    }
-  }, [videoReady, useVideo, videoSrc, showCard, isFocuswater])
-
-  // CSS beatmap path (fallback when no AE render)
+  // Video path — wait for canplay, then start once
   useEffect(() => {
     if (!videoReady || useVideo || showCard) return
     if (index >= beats.length) {
@@ -565,7 +589,7 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
         isRomance ? 'is-mythic-edit is-romance-edit' : '',
         isDivine ? 'is-divine-edit' : '',
         isMamacita ? 'is-mamacita-edit' : '',
-        isFocuswater ? 'is-focuswater-edit' : '',
+        isFocuswater ? 'is-focuswater-edit is-focuswater-fullscreen' : '',
         !useVideo && beat?.artB ? 'has-broll' : '',
       ]
         .filter(Boolean)
@@ -581,16 +605,31 @@ export function DropCutscene({ card, onDone, forceEdit = 'auto' }: Props) {
             src={videoSrc}
             playsInline
             muted={false}
-            preload="metadata"
+            preload="auto"
+            onCanPlay={() => {
+              if (!showCard && useVideo) startVideoPlayback()
+            }}
             onEnded={finishToCard}
             onError={() => setUseVideo(false)}
           />
-          {isFocuswater ? (
-            <div className="drop-cut-watermark" aria-hidden>
-              <span>FOCUSWATER</span>
-              <em>WRAAAP</em>
-            </div>
-          ) : null}
+          {needsTap && (
+            <button
+              type="button"
+              className="drop-cut-tap-play"
+              onClick={() => {
+                const el = videoRef.current
+                if (el) {
+                  el.muted = false
+                  stopEditBed(0.08)
+                  void el.play()
+                }
+                setNeedsTap(false)
+                videoStartedRef.current = true
+              }}
+            >
+              Tap to play · FOCUSWATER
+            </button>
+          )}
           <button
             type="button"
             className="drop-cut-skip"

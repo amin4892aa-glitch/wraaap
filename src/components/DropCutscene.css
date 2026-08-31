@@ -75,7 +75,42 @@
 }
 
 .drop-cut.is-focuswater-edit .drop-cut-video {
-  filter: contrast(1.12) saturate(1.15) brightness(0.92);
+  filter: contrast(1.08) saturate(1.1) brightness(0.98);
+}
+
+.drop-cut.is-focuswater-fullscreen.is-video-edit {
+  background: #000;
+}
+
+.drop-cut.is-focuswater-fullscreen.is-video-edit .drop-cut-video-stage {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.drop-cut.is-focuswater-fullscreen.is-video-edit .drop-cut-video {
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  max-height: 100dvh;
+  object-fit: contain;
+  object-position: center center;
+}
+
+.drop-cut-tap-play {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: 'Black Ops One', Impact, sans-serif;
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 @keyframes focuswater-wm {

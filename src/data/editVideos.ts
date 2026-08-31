@@ -13,7 +13,14 @@ export const EDIT_VIDEO_CANDIDATES: Record<EditVideoKey, string[]> = {
 export function editVideoUrls(preset: string): string[] {
   if (!(preset in EDIT_VIDEO_CANDIDATES)) return []
   const base = import.meta.env.BASE_URL
-  return EDIT_VIDEO_CANDIDATES[preset as EditVideoKey].map((file) => `${base}${file}`)
+  const prefix = base.endsWith('/') ? base : `${base}/`
+  return EDIT_VIDEO_CANDIDATES[preset as EditVideoKey].map((file) => `${prefix}${file}`)
+}
+
+/** Focuswater always ships with public/edits/focuswater.mp4 — skip flaky HEAD probes. */
+export function editVideoUrlDirect(preset: string): string | null {
+  const urls = editVideoUrls(preset)
+  return urls[0] ?? null
 }
 
 /** HEAD request — first existing render in /public/edits. Cached per session. */
