@@ -1125,13 +1125,12 @@
 
 @media (max-width: 720px) {
   .lounge-ready-toast {
-    top: calc(var(--lounge-chrome-top) + 118px);
+    top: calc(var(--lounge-chrome-top) + 62px);
     left: max(12px, env(safe-area-inset-left));
     width: calc(100% - 24px);
   }
 
-  .lounge-music.is-collapsed ~ .lounge-ready-toast,
-  .lounge:has(.lounge-music.is-collapsed) .lounge-ready-toast {
-    top: calc(var(--lounge-chrome-top) + 58px);
+  .lounge:has(.lounge-music.is-expanded) .lounge-ready-toast {
+    top: calc(var(--lounge-chrome-top) + min(240px, 42vh));
   }
 }

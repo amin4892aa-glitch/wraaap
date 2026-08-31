@@ -17,9 +17,11 @@ const COLLAPSE_KEY = 'wraaap-lounge-music-collapsed'
 
 function readCollapsed() {
   try {
-    return sessionStorage.getItem(COLLAPSE_KEY) === '1'
+    const stored = sessionStorage.getItem(COLLAPSE_KEY)
+    if (stored === null) return true
+    return stored === '1'
   } catch {
-    return false
+    return true
   }
 }
 
@@ -33,13 +35,12 @@ function writeCollapsed(value: boolean) {
 
 export function LoungeMusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const lyricsRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Map<number, HTMLParagraphElement>>(new Map())
   const [trackId, setTrackId] = useState(LOUNGE_TRACKS[0].id)
   const [playing, setPlaying] = useState(false)
   const [volume, setVolume] = useState(0.72)
   const [lyricsOpen, setLyricsOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(readCollapsed)
+  const [expanded, setExpanded] = useState(() => !readCollapsed())
   const [currentTime, setCurrentTime] = useState(0)
 
   const track = useMemo(() => getLoungeTrack(trackId), [trackId])
@@ -99,20 +100,16 @@ export function LoungeMusicPlayer() {
 
   function toggleLyrics() {
     setLyricsOpen((open) => !open)
+    if (!expanded) setExpanded(true)
   }
 
-  function toggleCollapsed() {
-    setCollapsed((value) => {
-      const next = !value
-      if (next) setLyricsOpen(false)
-      writeCollapsed(next)
+  function toggleExpanded() {
+    setExpanded((open) => {
+      const next = !open
+      writeCollapsed(!next)
+      if (!next) setLyricsOpen(false)
       return next
     })
-  }
-
-  function expandPlayer() {
-    setCollapsed(false)
-    writeCollapsed(false)
   }
 
   function onVolume(next: number) {
@@ -139,7 +136,7 @@ export function LoungeMusicPlayer() {
 
   return (
     <div
-      className={`lounge-music ${playing ? 'is-playing' : ''} ${lyricsOpen ? 'is-open' : ''} ${collapsed ? 'is-collapsed' : ''}`}
+      className={`lounge-music ${playing ? 'is-playing' : ''} ${expanded ? 'is-expanded' : 'is-collapsed'} ${lyricsOpen ? 'is-open' : ''}`}
     >
       <audio
         ref={audioRef}
@@ -152,162 +149,161 @@ export function LoungeMusicPlayer() {
         onSeeked={onTimeUpdate}
       />
 
-      <button
-        type="button"
-        className="lounge-music-collapse"
-        onClick={toggleCollapsed}
-        aria-expanded={!collapsed}
-        aria-label={collapsed ? 'Expand player' : 'Minimize player'}
-        title={collapsed ? 'Expand' : 'Minimize'}
-      >
-        {collapsed ? '+' : '−'}
-      </button>
-
-      {collapsed ? (
-        <div className="lounge-music-mini">
-          <button
-            type="button"
-            className="lounge-music-mini-disc"
-            onClick={toggle}
-            aria-pressed={playing}
-            aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
-          >
-            <span className="lounge-music-mini-vinyl" aria-hidden />
-          </button>
-          <button type="button" className="lounge-music-mini-meta" onClick={expandPlayer}>
-            <strong>{track.title}</strong>
-            <span>{playing ? `ON AIR · ${formatTime(currentTime)}` : 'Tap to expand'}</span>
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="lounge-music-deck">
+      <div className="lounge-music-preview">
         <button
           type="button"
-          className="lounge-music-sleeve"
+          className="lounge-music-preview-sleeve"
           onClick={toggle}
           aria-pressed={playing}
           aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
         >
-          <span className="lounge-music-sleeve-art" aria-hidden>
-            <img src={assetUrl('favicon.svg')} alt="" />
-          </span>
-          <span className="lounge-music-sleeve-title">{track.title}</span>
-          <span className="lounge-music-sleeve-sub">{track.subtitle}</span>
+          <img src={assetUrl('favicon.svg')} alt="" />
         </button>
-
-        <div className="lounge-music-platter">
-          <span className="lounge-music-arm" aria-hidden />
-          <button
-            type="button"
-            className="lounge-music-vinyl"
-            onClick={toggle}
-            aria-pressed={playing}
-            aria-label={playing ? 'Pause record' : 'Play record'}
-          >
-            <span className="lounge-music-vinyl-disc" aria-hidden>
-              <span className="lounge-music-vinyl-grooves" />
-              <span className="lounge-music-vinyl-shine" />
-              <span className="lounge-music-vinyl-label">
-                <span className="lounge-music-vinyl-label-title">{track.title}</span>
-                <span className="lounge-music-vinyl-label-sub">45 RPM</span>
-              </span>
-              <span className="lounge-music-vinyl-hole" />
-            </span>
-          </button>
-          <button
-            type="button"
-            className="lounge-music-logo"
-            onClick={toggleLyrics}
-            aria-expanded={lyricsOpen}
-            aria-label="Toggle lyrics"
-          >
-            WRAAAP
-          </button>
-        </div>
-
-        <div className="lounge-music-panel">
-          <label className="lounge-music-track-pick">
-            <span>Track</span>
-            <select value={trackId} onChange={(event) => onTrackChange(event.target.value)}>
-              {LOUNGE_TRACKS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.title} · {item.subtitle}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="lounge-music-meta">
-            <strong>{track.title}</strong>
-            <span>
-              {playing ? 'Now spinning' : 'Tap sleeve or record'} · {formatTime(currentTime)}
-            </span>
-          </div>
-          <div className="lounge-music-actions">
-            <button
-              type="button"
-              className={`lounge-music-lyrics-btn ${lyricsOpen ? 'is-open' : ''}`}
-              onClick={toggleLyrics}
-              aria-expanded={lyricsOpen}
-              disabled={!track.lyrics.length}
-            >
-              Lyrics
-            </button>
-            <span className="lounge-music-badge">{playing ? 'ON AIR' : 'STBY'}</span>
-          </div>
-          <label className="lounge-music-vol">
-            <span>Vol</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={volume}
-              onChange={(event) => onVolume(Number(event.target.value))}
-            />
-          </label>
-        </div>
+        <button
+          type="button"
+          className="lounge-music-preview-disc"
+          onClick={toggle}
+          aria-hidden
+          tabIndex={-1}
+        >
+          <span className="lounge-music-preview-vinyl" />
+        </button>
+        <button type="button" className="lounge-music-preview-meta" onClick={toggleExpanded}>
+          <strong>{track.title}</strong>
+          <span>{playing ? `ON AIR · ${formatTime(currentTime)}` : track.subtitle}</span>
+        </button>
+        <button
+          type="button"
+          className="lounge-music-expand"
+          onClick={toggleExpanded}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse player' : 'Expand player'}
+        >
+          {expanded ? '▲' : '▼'}
+        </button>
       </div>
 
-      {lyricsOpen && track.lyrics.length > 0 && (
-        <div className="lounge-music-lyrics" ref={lyricsRef}>
-          <p className="lounge-music-lyrics-kicker">Lyrics · synced</p>
-          {sections.map((section) => (
-            <section
-              key={section.title + section.lines[0]?.index}
-              className={
-                section.lines.some((line) => line.index === activeIndex) ? 'is-active-section' : ''
-              }
-            >
-              <h3>[{section.title}]</h3>
-              {section.lines.map((line) => {
-                const state =
-                  line.index === activeIndex ? 'is-active' : line.index < activeIndex ? 'is-past' : ''
-                return (
-                  <p
-                    key={`${line.index}-${line.text}`}
-                    ref={(node) => {
-                      if (node) lineRefs.current.set(line.index, node)
-                      else lineRefs.current.delete(line.index)
-                    }}
-                    className={state}
-                  >
-                    {line.text}
-                  </p>
-                )
-              })}
-            </section>
-          ))}
-        </div>
-      )}
+      <div className="lounge-music-drawer">
+        <div className="lounge-music-drawer-inner">
+          <div className="lounge-music-deck">
+            <div className="lounge-music-platter">
+              <span className="lounge-music-arm" aria-hidden />
+              <button
+                type="button"
+                className="lounge-music-vinyl"
+                onClick={toggle}
+                aria-pressed={playing}
+                aria-label={playing ? 'Pause record' : 'Play record'}
+              >
+                <span className="lounge-music-vinyl-disc" aria-hidden>
+                  <span className="lounge-music-vinyl-grooves" />
+                  <span className="lounge-music-vinyl-shine" />
+                  <span className="lounge-music-vinyl-label">
+                    <span className="lounge-music-vinyl-label-title">{track.title}</span>
+                    <span className="lounge-music-vinyl-label-sub">45 RPM</span>
+                  </span>
+                  <span className="lounge-music-vinyl-hole" />
+                </span>
+              </button>
+              <button
+                type="button"
+                className="lounge-music-logo"
+                onClick={toggleLyrics}
+                aria-expanded={lyricsOpen}
+                aria-label="Toggle lyrics"
+              >
+                WRAAAP
+              </button>
+            </div>
+
+            <div className="lounge-music-panel">
+              <label className="lounge-music-track-pick">
+                <span>Track</span>
+                <select value={trackId} onChange={(event) => onTrackChange(event.target.value)}>
+                  {LOUNGE_TRACKS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.title} · {item.subtitle}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="lounge-music-meta">
+                <strong>{track.title}</strong>
+                <span>
+                  {playing ? 'Now spinning' : 'Tap record to play'} · {formatTime(currentTime)}
+                </span>
+              </div>
+              <div className="lounge-music-actions">
+                <button
+                  type="button"
+                  className={`lounge-music-lyrics-btn ${lyricsOpen ? 'is-open' : ''}`}
+                  onClick={toggleLyrics}
+                  aria-expanded={lyricsOpen}
+                  disabled={!track.lyrics.length}
+                >
+                  Lyrics
+                </button>
+                <span className="lounge-music-badge">{playing ? 'ON AIR' : 'STBY'}</span>
+              </div>
+              <label className="lounge-music-vol">
+                <span>Vol</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={volume}
+                  onChange={(event) => onVolume(Number(event.target.value))}
+                />
+              </label>
+            </div>
+          </div>
+
+          {lyricsOpen && track.lyrics.length > 0 && (
+            <div className="lounge-music-lyrics">
+              <p className="lounge-music-lyrics-kicker">Lyrics · synced</p>
+              {sections.map((section) => (
+                <section
+                  key={section.title + section.lines[0]?.index}
+                  className={
+                    section.lines.some((line) => line.index === activeIndex)
+                      ? 'is-active-section'
+                      : ''
+                  }
+                >
+                  <h3>[{section.title}]</h3>
+                  {section.lines.map((line) => {
+                    const state =
+                      line.index === activeIndex
+                        ? 'is-active'
+                        : line.index < activeIndex
+                          ? 'is-past'
+                          : ''
+                    return (
+                      <p
+                        key={`${line.index}-${line.text}`}
+                        ref={(node) => {
+                          if (node) lineRefs.current.set(line.index, node)
+                          else lineRefs.current.delete(line.index)
+                        }}
+                        className={state}
+                      >
+                        {line.text}
+                      </p>
+                    )
+                  })}
+                </section>
+              ))}
+            </div>
+          )}
 
           {lyricsOpen && !track.lyrics.length && (
             <div className="lounge-music-lyrics lounge-music-lyrics-empty">
               <p>No synced lyrics for this track yet.</p>
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   )
 }
