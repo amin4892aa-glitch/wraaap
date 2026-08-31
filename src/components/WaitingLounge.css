@@ -164,6 +164,19 @@
   letter-spacing: 0.04em;
 }
 
+.lounge-live {
+  margin: 0;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.lounge-ticket.is-cooking .lounge-live,
+.lounge-ticket.is-ready .lounge-live {
+  color: #555;
+}
+
 .lounge-ticket em,
 .lounge-status {
   font-style: normal;

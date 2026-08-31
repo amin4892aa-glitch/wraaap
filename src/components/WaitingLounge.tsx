@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { ORDERS_EVENT, type Order, type OrderStatus } from '../data/orders'
-import { startOrdersPoll } from '../lib/pollOrders'
+import { ORDERS_EVENT, ORDERS_KEY, type Order, type OrderStatus } from '../data/orders'
+import { POLL_LIVE_MS, startOrdersPoll } from '../lib/pollOrders'
 import {
   DROP_CARDS,
   INVENTORY_EVENT,
@@ -186,12 +186,17 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
       })
     }
     syncFromCache()
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === ORDERS_KEY || event.key === null) syncFromCache()
+    }
     window.addEventListener(ORDERS_EVENT, syncFromCache)
+    window.addEventListener('storage', onStorage)
     const stop = startOrdersPoll((list) => {
       setOrder(list.find((item) => item.id === orderId) || null)
-    })
+    }, POLL_LIVE_MS)
     return () => {
       window.removeEventListener(ORDERS_EVENT, syncFromCache)
+      window.removeEventListener('storage', onStorage)
       stop()
     }
   }, [orderId])
@@ -450,6 +455,9 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
           <h1>{order?.customer.name || 'Guest'}</h1>
           <strong className="lounge-id">{orderId || '—'}</strong>
           <OrderProgressBar status={order?.status} variant="lounge" />
+          <p className="lounge-live" aria-live="polite">
+            {order ? 'live · updates every few seconds' : 'waiting for ticket sync…'}
+          </p>
           <em className="lounge-status">{statusLabel}</em>
           <ul>
             {(order?.wrapDesign?.layerLabels || order?.items.map((i) => i.name) || []).map(
