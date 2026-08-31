@@ -57,7 +57,8 @@
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  margin-bottom: 28px;
+  margin: 0 auto 28px;
+  width: min(1100px, 100%);
 }
 
 .hub-brand {
@@ -77,8 +78,9 @@
 }
 
 .hub-hero {
-  margin-bottom: 36px;
+  margin: 0 auto 40px;
   max-width: 42rem;
+  text-align: center;
 }
 
 .hub-kicker {
@@ -90,8 +92,9 @@
 }
 
 .hub-warp {
-  margin: 0;
+  margin: 0 auto;
   display: grid;
+  justify-items: center;
   gap: 0.04em;
   font-family: 'Black Ops One', Impact, sans-serif;
   font-size: clamp(2.8rem, 12vw, 6.4rem);
@@ -102,20 +105,20 @@
 }
 
 .hub-warp span:first-child {
-  transform: perspective(280px) rotateY(14deg) skewY(-1.5deg);
-  transform-origin: left center;
+  transform: perspective(280px) rotateY(8deg) skewY(-1deg);
+  transform-origin: center;
   max-width: 8ch;
   color: var(--hub-red);
 }
 
 .hub-warp span:last-child {
-  transform: perspective(280px) rotateY(-12deg) skewY(1.5deg);
-  transform-origin: left center;
+  transform: perspective(280px) rotateY(-8deg) skewY(1deg);
+  transform-origin: center;
   max-width: 7ch;
 }
 
 .hub-lede {
-  margin: 18px 0 0;
+  margin: 18px auto 0;
   max-width: 34rem;
   color: var(--hub-muted);
   font-size: 0.92rem;
@@ -127,6 +130,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   width: min(1100px, 100%);
+  margin: 0 auto;
 }
 
 /* Marker oval boxes */
@@ -238,8 +242,8 @@
 }
 
 .hub-lounge.hub-oval-box {
-  margin-top: 22px;
-  width: 100%;
+  margin: 22px auto 0;
+  width: min(1100px, 100%);
   min-height: 200px;
 }
 
