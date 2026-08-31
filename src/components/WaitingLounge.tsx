@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { ORDERS_EVENT, type Order } from '../data/orders'
+import { ORDERS_EVENT, type Order, type OrderStatus } from '../data/orders'
 import { startOrdersPoll } from '../lib/pollOrders'
 import {
   DROP_CARDS,
@@ -97,6 +97,47 @@ function payout(a: Symbol, b: Symbol, c: Symbol, bet: number) {
   return { label: 'BUST', win: 0, kind: 'bust' as const }
 }
 
+function readyNoticeKey(orderId: string) {
+  return `wraaap-ready-notice-${orderId}`
+}
+
+function hasReadyNotice(orderId: string) {
+  try {
+    return sessionStorage.getItem(readyNoticeKey(orderId)) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markReadyNotice(orderId: string) {
+  try {
+    sessionStorage.setItem(readyNoticeKey(orderId), '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+function pushReadyNotification(order: Order) {
+  if (typeof window === 'undefined') return
+  try {
+    navigator.vibrate?.([120, 60, 120])
+  } catch {
+    /* ignore */
+  }
+  if (typeof Notification === 'undefined') return
+  const title = 'WRAAAP · wrap ready'
+  const body = `${order.customer.name || 'Guest'} · ${order.id} — grab your wrap`
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/favicon.svg' })
+    return
+  }
+  if (Notification.permission !== 'denied') {
+    void Notification.requestPermission().then((perm) => {
+      if (perm === 'granted') new Notification(title, { body, icon: '/favicon.svg' })
+    })
+  }
+}
+
 export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   const [order, setOrder] = useState<Order | null>(null)
   const [chips, setChips] = useState(() => loadChips())
@@ -116,8 +157,10 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   const [achievement, setAchievement] = useState<string | null>(null)
   const [wrapCursorOn, setWrapCursorOn] = useState(() => hasAchievement('wrap-cursor'))
   const [pendingAch, setPendingAch] = useState(false)
+  const [readyNotice, setReadyNotice] = useState(false)
   const timers = useRef<number[]>([])
   const blurRef = useRef<number | null>(null)
+  const prevStatusRef = useRef<OrderStatus | null>(null)
 
   useEffect(() => {
     syncAchievementCosmetics()
@@ -153,6 +196,32 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   }, [orderId])
 
   useEffect(() => {
+    if (!order || !orderId) {
+      prevStatusRef.current = null
+      setReadyNotice(false)
+      return
+    }
+
+    const prev = prevStatusRef.current
+    const next = order.status
+    prevStatusRef.current = next
+
+    if (next === 'fertig') {
+      if (prev !== 'fertig' && !hasReadyNotice(orderId)) {
+        markReadyNotice(orderId)
+        setReadyNotice(true)
+        unlockGambleAudio()
+        playWin('pair')
+        pushReadyNotification(order)
+      } else if (hasReadyNotice(orderId)) {
+        setReadyNotice(true)
+      }
+    } else {
+      setReadyNotice(false)
+    }
+  }, [order, orderId])
+
+  useEffect(() => {
     const syncCards = () => setOwned(loadInventory())
     window.addEventListener(INVENTORY_EVENT, syncCards)
     return () => window.removeEventListener(INVENTORY_EVENT, syncCards)
@@ -172,7 +241,21 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
     if (!order) return 'ticket in the void'
     if (order.status === 'neu') return 'queued · kitchen staring'
     if (order.status === 'in_arbeit') return 'on the line · heat up'
-    return 'ready · grab your wrap'
+    return 'done · grab your wrap'
+  }, [order])
+
+  const ticketKicker = useMemo(() => {
+    if (!order) return 'waiting on a ticket'
+    if (order.status === 'fertig') return 'your wrap is done'
+    if (order.status === 'in_arbeit') return 'your wrap is cooking'
+    return 'your wrap is queued'
+  }, [order])
+
+  const ticketClass = useMemo(() => {
+    if (!order) return 'is-void'
+    if (order.status === 'fertig') return 'is-ready'
+    if (order.status === 'in_arbeit') return 'is-cooking'
+    return 'is-queued'
   }, [order])
 
   const counts = useMemo(() => inventoryCounts(owned), [owned])
@@ -346,12 +429,26 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
         </button>
       </header>
 
+      {readyNotice && order?.status === 'fertig' && (
+        <div className="lounge-ready-toast" role="status" aria-live="assertive">
+          <div>
+            <strong>WRAP READY</strong>
+            <span>
+              {order.customer.name || 'Guest'} · {orderId} — pick it up
+            </span>
+          </div>
+          <button type="button" onClick={() => setReadyNotice(false)}>
+            OK
+          </button>
+        </div>
+      )}
+
       <main className="lounge-main">
-        <section className="lounge-ticket">
-          <p>your wrap is cooking</p>
+        <section className={`lounge-ticket ${ticketClass}`}>
+          <p>{ticketKicker}</p>
           <h1>{order?.customer.name || 'Guest'}</h1>
           <strong className="lounge-id">{orderId || '—'}</strong>
-          <em>{statusLabel}</em>
+          <em className="lounge-status">{statusLabel}</em>
           <ul>
             {(order?.wrapDesign?.layerLabels || order?.items.map((i) => i.name) || []).map(
               (label) => (

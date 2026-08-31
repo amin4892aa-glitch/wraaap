@@ -66,6 +66,9 @@ export function resetPromoProgress() {
     }
   }
 }
+
+/** Lounge cards / aura collection only — keeps chips, promos, orders. */
+export function resetLoungeCardProgress() {
   if (typeof window === 'undefined') return
   try {
     localStorage.removeItem('wraaap-card-inventory')
