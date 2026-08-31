@@ -12,14 +12,9 @@ function assetUrl(path: string) {
   return `${prefix}${path}`
 }
 
-function lineKeyword(text: string) {
-  const cleaned = text.replace(/[()[\]'"]/g, '').trim()
-  const word = cleaned.split(/\s+/)[0] || text
-  return word.length > 14 ? `${word.slice(0, 12)}…` : word
-}
-
 export function LoungeMusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const track = useMemo(() => getLoungeTrack(LOUNGE_TRACKS[0].id), [])
   const [playing, setPlaying] = useState(false)
   const [lyricsOpen, setLyricsOpen] = useState(false)
@@ -30,8 +25,8 @@ export function LoungeMusicPlayer() {
     () => activeLyricIndex(track.lyrics, currentTime),
     [track.lyrics, currentTime],
   )
-  const shownIndex = pickedIndex ?? (playing && liveIndex >= 0 ? liveIndex : null)
-  const shownLine = shownIndex !== null ? track.lyrics[shownIndex] : null
+  const activeIndex =
+    playing && liveIndex >= 0 ? liveIndex : pickedIndex
 
   useEffect(() => {
     const el = audioRef.current
@@ -52,6 +47,12 @@ export function LoungeMusicPlayer() {
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
   }, [playing])
+
+  useEffect(() => {
+    if (!lyricsOpen || activeIndex === null || !listRef.current) return
+    const node = listRef.current.querySelector(`[data-lyric-index="${activeIndex}"]`)
+    node?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [activeIndex, lyricsOpen])
 
   function toggle() {
     const el = audioRef.current
@@ -93,12 +94,6 @@ export function LoungeMusicPlayer() {
     setCurrentTime(el.currentTime)
   }
 
-  function formatTime(sec: number) {
-    const m = Math.floor(sec / 60)
-    const s = Math.floor(sec % 60)
-    return `${m}:${s.toString().padStart(2, '0')}`
-  }
-
   return (
     <div
       className={`lounge-music ${playing ? 'is-playing' : ''} ${lyricsOpen ? 'is-open' : ''}`}
@@ -114,57 +109,40 @@ export function LoungeMusicPlayer() {
         onSeeked={onTimeUpdate}
       />
 
-      <div className="lounge-music-preview">
+      <div className="lounge-music-head">
         <button
           type="button"
-          className="lounge-music-preview-sleeve"
+          className="lounge-music-disc"
           onClick={toggle}
           aria-pressed={playing}
           aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
         >
-          <img src={assetUrl('favicon.svg')} alt="" />
+          <span className="lounge-music-vinyl" aria-hidden />
         </button>
-        <button type="button" className="lounge-music-preview-disc" onClick={toggle}>
-          <span className="lounge-music-preview-vinyl" aria-hidden />
-        </button>
-        <div className="lounge-music-preview-meta">
-          <strong>{track.title}</strong>
-          <span>{playing ? `ON AIR · ${formatTime(currentTime)}` : track.subtitle}</span>
-        </div>
         <button
           type="button"
-          className={`lounge-music-lyrics-btn ${lyricsOpen ? 'is-open' : ''}`}
+          className="lounge-music-title"
           onClick={toggleLyrics}
           aria-expanded={lyricsOpen}
         >
-          Lyrics {lyricsOpen ? '▲' : '▼'}
+          {track.title}
         </button>
       </div>
 
-      <div className="lounge-music-drawer">
-        <div className="lounge-music-drawer-inner">
-          {lyricsOpen && (
-            <div className="lounge-music-words">
-              {track.lyrics.map((line, index) => (
-                <button
-                  key={`${index}-${line.text}`}
-                  type="button"
-                  className={`lounge-music-word ${shownIndex === index ? 'is-picked' : ''}`}
-                  style={{ animationDelay: `${Math.min(index * 16, 280)}ms` }}
-                  onClick={() => pickLine(index)}
-                >
-                  {lineKeyword(line.text)}
-                </button>
-              ))}
-            </div>
-          )}
+      {lyricsOpen && (
+        <div ref={listRef} className="lounge-music-list">
+          {track.lyrics.map((line, index) => (
+            <button
+              key={`${index}-${line.text}`}
+              type="button"
+              data-lyric-index={index}
+              className={`lounge-music-line-btn ${activeIndex === index ? 'is-active' : ''}`}
+              onClick={() => pickLine(index)}
+            >
+              {line.text}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {shownLine && (
-        <p key={shownIndex} className="lounge-music-line">
-          {shownLine.text}
-        </p>
       )}
     </div>
   )
