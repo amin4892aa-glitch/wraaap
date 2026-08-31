@@ -6,12 +6,12 @@
   --tortilla-light: #e8c39a;
   --avocado: #8fb85a;
   --tomato: #d85a42;
-  --display: 'Space Grotesk', system-ui, sans-serif;
-  --sans: 'Space Grotesk', system-ui, sans-serif;
-  --serif: 'Cormorant Garamond', Georgia, serif;
+  --display: 'IBM Plex Mono', ui-monospace, monospace;
+  --sans: 'IBM Plex Mono', ui-monospace, monospace;
+  --serif: Georgia, 'Times New Roman', serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  font: 16px/150% var(--sans);
+  font: 16px/150% var(--mono);
   color: var(--cream);
   background: var(--bg);
   font-synthesis: none;
