@@ -150,6 +150,7 @@ export function LoungeMusicPlayer() {
                   key={`${index}-${line.text}`}
                   type="button"
                   className={`lounge-music-word ${shownIndex === index ? 'is-picked' : ''}`}
+                  style={{ animationDelay: `${Math.min(index * 16, 280)}ms` }}
                   onClick={() => pickLine(index)}
                 >
                   {lineKeyword(line.text)}
@@ -161,7 +162,9 @@ export function LoungeMusicPlayer() {
       </div>
 
       {shownLine && (
-        <p className="lounge-music-line">{shownLine.text}</p>
+        <p key={shownIndex} className="lounge-music-line">
+          {shownLine.text}
+        </p>
       )}
     </div>
   )
