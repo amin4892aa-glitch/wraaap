@@ -13,37 +13,14 @@ function assetUrl(path: string) {
   return `${prefix}${path}`
 }
 
-const COLLAPSE_KEY = 'wraaap-lounge-music-collapsed'
-
-function readCollapsed() {
-  try {
-    const stored = sessionStorage.getItem(COLLAPSE_KEY)
-    if (stored === null) return true
-    return stored === '1'
-  } catch {
-    return true
-  }
-}
-
-function writeCollapsed(value: boolean) {
-  try {
-    sessionStorage.setItem(COLLAPSE_KEY, value ? '1' : '0')
-  } catch {
-    /* ignore */
-  }
-}
-
 export function LoungeMusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const lineRefs = useRef<Map<number, HTMLParagraphElement>>(new Map())
-  const [trackId, setTrackId] = useState(LOUNGE_TRACKS[0].id)
+  const track = useMemo(() => getLoungeTrack(LOUNGE_TRACKS[0].id), [])
   const [playing, setPlaying] = useState(false)
-  const [volume, setVolume] = useState(0.72)
   const [lyricsOpen, setLyricsOpen] = useState(false)
-  const [expanded, setExpanded] = useState(() => !readCollapsed())
   const [currentTime, setCurrentTime] = useState(0)
 
-  const track = useMemo(() => getLoungeTrack(trackId), [trackId])
   const activeIndex = useMemo(
     () => activeLyricIndex(track.lyrics, currentTime),
     [track.lyrics, currentTime],
@@ -53,18 +30,10 @@ export function LoungeMusicPlayer() {
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
-    el.pause()
+    el.volume = 0.72
     el.src = assetUrl(track.src)
     el.load()
-    setPlaying(false)
-    setCurrentTime(0)
   }, [track.src])
-
-  useEffect(() => {
-    const el = audioRef.current
-    if (!el) return
-    el.volume = volume
-  }, [volume])
 
   useEffect(() => {
     if (!playing) return
@@ -92,7 +61,6 @@ export function LoungeMusicPlayer() {
       setPlaying(false)
       return
     }
-    el.volume = volume
     void el.play()
       .then(() => setPlaying(true))
       .catch(() => setPlaying(false))
@@ -100,26 +68,6 @@ export function LoungeMusicPlayer() {
 
   function toggleLyrics() {
     setLyricsOpen((open) => !open)
-    if (!expanded) setExpanded(true)
-  }
-
-  function toggleExpanded() {
-    setExpanded((open) => {
-      const next = !open
-      writeCollapsed(!next)
-      if (!next) setLyricsOpen(false)
-      return next
-    })
-  }
-
-  function onVolume(next: number) {
-    setVolume(next)
-    if (audioRef.current) audioRef.current.volume = next
-  }
-
-  function onTrackChange(nextId: string) {
-    if (nextId === trackId) return
-    setTrackId(nextId)
   }
 
   function onTimeUpdate() {
@@ -136,7 +84,7 @@ export function LoungeMusicPlayer() {
 
   return (
     <div
-      className={`lounge-music ${playing ? 'is-playing' : ''} ${expanded ? 'is-expanded' : 'is-collapsed'} ${lyricsOpen ? 'is-open' : ''}`}
+      className={`lounge-music ${playing ? 'is-playing' : ''} ${lyricsOpen ? 'is-open' : ''}`}
     >
       <audio
         ref={audioRef}
@@ -159,109 +107,27 @@ export function LoungeMusicPlayer() {
         >
           <img src={assetUrl('favicon.svg')} alt="" />
         </button>
-        <button
-          type="button"
-          className="lounge-music-preview-disc"
-          onClick={toggle}
-          aria-hidden
-          tabIndex={-1}
-        >
-          <span className="lounge-music-preview-vinyl" />
+        <button type="button" className="lounge-music-preview-disc" onClick={toggle}>
+          <span className="lounge-music-preview-vinyl" aria-hidden />
         </button>
-        <button type="button" className="lounge-music-preview-meta" onClick={toggleExpanded}>
+        <div className="lounge-music-preview-meta">
           <strong>{track.title}</strong>
           <span>{playing ? `ON AIR · ${formatTime(currentTime)}` : track.subtitle}</span>
-        </button>
+        </div>
         <button
           type="button"
-          className="lounge-music-expand"
-          onClick={toggleExpanded}
-          aria-expanded={expanded}
-          aria-label={expanded ? 'Collapse player' : 'Expand player'}
+          className={`lounge-music-lyrics-btn ${lyricsOpen ? 'is-open' : ''}`}
+          onClick={toggleLyrics}
+          aria-expanded={lyricsOpen}
         >
-          {expanded ? '▲' : '▼'}
+          Lyrics {lyricsOpen ? '▲' : '▼'}
         </button>
       </div>
 
       <div className="lounge-music-drawer">
         <div className="lounge-music-drawer-inner">
-          <div className="lounge-music-deck">
-            <div className="lounge-music-platter">
-              <span className="lounge-music-arm" aria-hidden />
-              <button
-                type="button"
-                className="lounge-music-vinyl"
-                onClick={toggle}
-                aria-pressed={playing}
-                aria-label={playing ? 'Pause record' : 'Play record'}
-              >
-                <span className="lounge-music-vinyl-disc" aria-hidden>
-                  <span className="lounge-music-vinyl-grooves" />
-                  <span className="lounge-music-vinyl-shine" />
-                  <span className="lounge-music-vinyl-label">
-                    <span className="lounge-music-vinyl-label-title">{track.title}</span>
-                    <span className="lounge-music-vinyl-label-sub">45 RPM</span>
-                  </span>
-                  <span className="lounge-music-vinyl-hole" />
-                </span>
-              </button>
-              <button
-                type="button"
-                className="lounge-music-logo"
-                onClick={toggleLyrics}
-                aria-expanded={lyricsOpen}
-                aria-label="Toggle lyrics"
-              >
-                WRAAAP
-              </button>
-            </div>
-
-            <div className="lounge-music-panel">
-              <label className="lounge-music-track-pick">
-                <span>Track</span>
-                <select value={trackId} onChange={(event) => onTrackChange(event.target.value)}>
-                  {LOUNGE_TRACKS.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.title} · {item.subtitle}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="lounge-music-meta">
-                <strong>{track.title}</strong>
-                <span>
-                  {playing ? 'Now spinning' : 'Tap record to play'} · {formatTime(currentTime)}
-                </span>
-              </div>
-              <div className="lounge-music-actions">
-                <button
-                  type="button"
-                  className={`lounge-music-lyrics-btn ${lyricsOpen ? 'is-open' : ''}`}
-                  onClick={toggleLyrics}
-                  aria-expanded={lyricsOpen}
-                  disabled={!track.lyrics.length}
-                >
-                  Lyrics
-                </button>
-                <span className="lounge-music-badge">{playing ? 'ON AIR' : 'STBY'}</span>
-              </div>
-              <label className="lounge-music-vol">
-                <span>Vol</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={volume}
-                  onChange={(event) => onVolume(Number(event.target.value))}
-                />
-              </label>
-            </div>
-          </div>
-
           {lyricsOpen && track.lyrics.length > 0 && (
             <div className="lounge-music-lyrics">
-              <p className="lounge-music-lyrics-kicker">Lyrics · synced</p>
               {sections.map((section) => (
                 <section
                   key={section.title + section.lines[0]?.index}
@@ -294,12 +160,6 @@ export function LoungeMusicPlayer() {
                   })}
                 </section>
               ))}
-            </div>
-          )}
-
-          {lyricsOpen && !track.lyrics.length && (
-            <div className="lounge-music-lyrics lounge-music-lyrics-empty">
-              <p>No synced lyrics for this track yet.</p>
             </div>
           )}
         </div>

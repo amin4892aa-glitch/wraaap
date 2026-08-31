@@ -1130,7 +1130,7 @@
     width: calc(100% - 24px);
   }
 
-  .lounge:has(.lounge-music.is-expanded) .lounge-ready-toast {
-    top: calc(var(--lounge-chrome-top) + min(240px, 42vh));
+  .lounge:has(.lounge-music.is-open) .lounge-ready-toast {
+    top: calc(var(--lounge-chrome-top) + min(200px, 38vh));
   }
 }
