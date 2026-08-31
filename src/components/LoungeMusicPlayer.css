@@ -125,6 +125,16 @@
   color: #111;
 }
 
+.lounge-music-line {
+  margin: 0;
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(196, 35, 42, 0.45);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #fff;
+  background: rgba(196, 35, 42, 0.15);
+}
+
 .lounge-music-drawer {
   display: grid;
   grid-template-rows: 0fr;
@@ -140,62 +150,44 @@
   min-height: 0;
 }
 
-.lounge-music-lyrics {
-  max-height: min(46vh, 360px);
+.lounge-music-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: min(36vh, 280px);
   overflow: auto;
   padding: 10px 12px 12px;
   border-top: 1px dashed rgba(244, 239, 230, 0.25);
-  font-size: 0.72rem;
-  line-height: 1.45;
 }
 
-.lounge-music-lyrics section {
-  margin-bottom: 12px;
-}
-
-.lounge-music-lyrics section.is-active-section h3 {
-  color: var(--red);
-}
-
-.lounge-music-lyrics h3 {
-  margin: 0 0 6px;
-  font-family: var(--punk);
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.lounge-music-word {
+  border: 1px solid rgba(244, 239, 230, 0.35);
+  background: rgba(255, 255, 255, 0.04);
   color: rgba(244, 239, 230, 0.75);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  padding: 5px 8px;
+  cursor: pointer;
+  text-transform: lowercase;
 }
 
-.lounge-music-lyrics p {
-  margin: 0 0 4px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  color: rgba(244, 239, 230, 0.45);
-  transition:
-    color 0.15s ease,
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-
-.lounge-music-lyrics p.is-past {
-  color: rgba(244, 239, 230, 0.62);
-}
-
-.lounge-music-lyrics p.is-active {
+.lounge-music-word:hover {
+  border-color: #f4efe6;
   color: #fff;
-  background: linear-gradient(90deg, rgba(196, 35, 42, 0.55), rgba(196, 35, 42, 0.15));
-  box-shadow: inset 3px 0 0 var(--red);
-  transform: translateX(2px);
-  font-weight: 700;
 }
 
-.lounge-music-lyrics p:last-child {
-  margin-bottom: 0;
+.lounge-music-word.is-picked {
+  border-color: var(--red);
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
 }
 
 .lounge-music-preview-sleeve:focus-visible,
 .lounge-music-preview-disc:focus-visible,
-.lounge-music-lyrics-btn:focus-visible {
+.lounge-music-lyrics-btn:focus-visible,
+.lounge-music-word:focus-visible {
   outline: 2px solid var(--red);
   outline-offset: 2px;
 }

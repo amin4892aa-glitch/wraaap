@@ -3,7 +3,6 @@ import {
   LOUNGE_TRACKS,
   activeLyricIndex,
   getLoungeTrack,
-  lyricSections,
 } from '../data/loungeTracks'
 import './LoungeMusicPlayer.css'
 
@@ -13,19 +12,26 @@ function assetUrl(path: string) {
   return `${prefix}${path}`
 }
 
+function lineKeyword(text: string) {
+  const cleaned = text.replace(/[()[\]'"]/g, '').trim()
+  const word = cleaned.split(/\s+/)[0] || text
+  return word.length > 14 ? `${word.slice(0, 12)}…` : word
+}
+
 export function LoungeMusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const lineRefs = useRef<Map<number, HTMLParagraphElement>>(new Map())
   const track = useMemo(() => getLoungeTrack(LOUNGE_TRACKS[0].id), [])
   const [playing, setPlaying] = useState(false)
   const [lyricsOpen, setLyricsOpen] = useState(false)
+  const [pickedIndex, setPickedIndex] = useState<number | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
 
-  const activeIndex = useMemo(
+  const liveIndex = useMemo(
     () => activeLyricIndex(track.lyrics, currentTime),
     [track.lyrics, currentTime],
   )
-  const sections = useMemo(() => lyricSections(track.lyrics), [track.lyrics])
+  const shownIndex = pickedIndex ?? (playing && liveIndex >= 0 ? liveIndex : null)
+  const shownLine = shownIndex !== null ? track.lyrics[shownIndex] : null
 
   useEffect(() => {
     const el = audioRef.current
@@ -47,12 +53,6 @@ export function LoungeMusicPlayer() {
     return () => cancelAnimationFrame(frame)
   }, [playing])
 
-  useEffect(() => {
-    if (!lyricsOpen || activeIndex < 0) return
-    const node = lineRefs.current.get(activeIndex)
-    node?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [activeIndex, lyricsOpen])
-
   function toggle() {
     const el = audioRef.current
     if (!el) return
@@ -68,6 +68,23 @@ export function LoungeMusicPlayer() {
 
   function toggleLyrics() {
     setLyricsOpen((open) => !open)
+  }
+
+  function pickLine(index: number) {
+    setPickedIndex(index)
+    setLyricsOpen(true)
+    const el = audioRef.current
+    const line = track.lyrics[index]
+    if (!el || !line) return
+    el.currentTime = line.start
+    setCurrentTime(line.start)
+    if (!playing) {
+      void el.play()
+        .then(() => setPlaying(true))
+        .catch(() => {
+          /* ignore */
+        })
+    }
   }
 
   function onTimeUpdate() {
@@ -126,44 +143,26 @@ export function LoungeMusicPlayer() {
 
       <div className="lounge-music-drawer">
         <div className="lounge-music-drawer-inner">
-          {lyricsOpen && track.lyrics.length > 0 && (
-            <div className="lounge-music-lyrics">
-              {sections.map((section) => (
-                <section
-                  key={section.title + section.lines[0]?.index}
-                  className={
-                    section.lines.some((line) => line.index === activeIndex)
-                      ? 'is-active-section'
-                      : ''
-                  }
+          {lyricsOpen && (
+            <div className="lounge-music-words">
+              {track.lyrics.map((line, index) => (
+                <button
+                  key={`${index}-${line.text}`}
+                  type="button"
+                  className={`lounge-music-word ${shownIndex === index ? 'is-picked' : ''}`}
+                  onClick={() => pickLine(index)}
                 >
-                  <h3>[{section.title}]</h3>
-                  {section.lines.map((line) => {
-                    const state =
-                      line.index === activeIndex
-                        ? 'is-active'
-                        : line.index < activeIndex
-                          ? 'is-past'
-                          : ''
-                    return (
-                      <p
-                        key={`${line.index}-${line.text}`}
-                        ref={(node) => {
-                          if (node) lineRefs.current.set(line.index, node)
-                          else lineRefs.current.delete(line.index)
-                        }}
-                        className={state}
-                      >
-                        {line.text}
-                      </p>
-                    )
-                  })}
-                </section>
+                  {lineKeyword(line.text)}
+                </button>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {shownLine && (
+        <p className="lounge-music-line">{shownLine.text}</p>
+      )}
     </div>
   )
 }
