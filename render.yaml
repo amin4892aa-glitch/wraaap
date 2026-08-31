@@ -1,10 +1,25 @@
 services:
+  # Fast CDN static frontend (no Node lag on page loads)
   - type: web
     name: wraaap
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE
+        value: https://wraaap-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Tiny API only — orders sync between devices
+  - type: web
+    name: wraaap-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm start
+    buildCommand: npm ci
+    startCommand: node server-api.mjs
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION

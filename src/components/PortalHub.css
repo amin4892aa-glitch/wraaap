@@ -73,7 +73,7 @@
   letter-spacing: 0.2em;
   font-size: 0.68rem;
   text-transform: uppercase;
-  font-family: 'Black Ops One', Impact, sans-serif;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   color: var(--hub-red);
 }
 
@@ -104,7 +104,7 @@
   display: grid;
   justify-items: center;
   gap: 0.04em;
-  font-family: 'Black Ops One', Impact, sans-serif;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   font-size: clamp(2.8rem, 12vw, 6.4rem);
   line-height: 0.88;
   letter-spacing: -0.02em;
@@ -300,7 +300,7 @@
   padding: 0;
   border: 0;
   font-style: normal;
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Comic Sans MS', 'Segoe Print', cursive;
   font-size: 0.95rem;
   letter-spacing: 0.02em;
   line-height: 1.1;
@@ -417,7 +417,7 @@
 }
 
 .hub-oval-inner strong {
-  font-family: 'Black Ops One', Impact, sans-serif;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   font-size: clamp(1.45rem, 2.8vw, 2rem);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -434,7 +434,7 @@
 
 .hub-enter {
   margin-top: 6px;
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Comic Sans MS', 'Segoe Print', cursive;
   font-size: 0.85rem;
   letter-spacing: 0.04em;
   opacity: 0.7;

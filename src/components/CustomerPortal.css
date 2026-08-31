@@ -6,9 +6,9 @@
   --kiosk-line: #2a221c;
   --kiosk-red: #c4232a;
   --kiosk-paper: #f7f1e6;
-  --punk: 'Black Ops One', Impact, sans-serif;
-  --hand: 'Permanent Marker', cursive;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --punk: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  --hand: 'Comic Sans MS', 'Segoe Print', cursive;
+  --mono: 'Courier New', Courier, ui-monospace, monospace;
 
   height: 100svh;
   min-height: 100svh;

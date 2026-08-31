@@ -2,9 +2,9 @@
   --ink: #f4efe6;
   --paper: #11100f;
   --red: #c4232a;
-  --punk: 'Black Ops One', Impact, sans-serif;
-  --hand: 'Permanent Marker', cursive;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --punk: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  --hand: 'Comic Sans MS', 'Segoe Print', cursive;
+  --mono: 'Courier New', Courier, ui-monospace, monospace;
 
   min-height: 100svh;
   background:

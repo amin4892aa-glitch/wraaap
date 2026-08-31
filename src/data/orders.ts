@@ -36,7 +36,9 @@ export type Order = {
 
 export const ORDERS_KEY = 'wraaap-orders'
 export const ORDERS_EVENT = 'wraaap-orders-changed'
-export const ORDERS_API = '/api/orders'
+
+const API_ROOT = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') || ''
+export const ORDERS_API = `${API_ROOT}/api/orders`
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
   neu: 'Neu',

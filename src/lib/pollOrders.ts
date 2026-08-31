@@ -1,9 +1,9 @@
 import { refreshOrders, type Order } from '../data/orders'
 
-/** Poll shared orders — slower + paused when tab hidden. */
+/** Poll shared orders — slow + paused when tab hidden. */
 export function startOrdersPoll(
   onUpdate: (orders: Order[]) => void,
-  intervalMs = 5000,
+  intervalMs = 15000,
 ): () => void {
   const tick = () => {
     if (document.hidden) return

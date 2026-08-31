@@ -6,12 +6,12 @@
   --tortilla-light: #e8c39a;
   --avocado: #8fb85a;
   --tomato: #d85a42;
-  --display: 'IBM Plex Mono', ui-monospace, monospace;
-  --sans: 'IBM Plex Mono', ui-monospace, monospace;
+  --display: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  --sans: 'Segoe UI', system-ui, sans-serif;
   --serif: Georgia, 'Times New Roman', serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --mono: 'Courier New', Courier, ui-monospace, monospace;
 
-  font: 16px/150% var(--mono);
+  font: 16px/150% var(--sans);
   color: var(--cream);
   background: var(--bg);
   font-synthesis: none;
@@ -52,4 +52,18 @@ html.ach-wrap-cursor a,
 html.ach-wrap-cursor button,
 html.ach-wrap-cursor [role='button'] {
   cursor: var(--wrap-cursor) !important;
+}
+
+/* feTurbulence SVG noise = GPU heavy on weak devices / Render */
+.hub-noise,
+.zine-noise,
+.lounge-noise,
+.hub-wash {
+  display: none !important;
+}
+
+.kitchen::before,
+.admin::before,
+.gate::before {
+  display: none !important;
 }

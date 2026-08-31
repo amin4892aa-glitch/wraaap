@@ -9,14 +9,12 @@ npm install
 npm run dev
 ```
 
-## Auf Render hosten
+## Auf Render hosten (empfohlen)
 
-**Web Service** (Node):
+**Static Site** `wraaap` + **Web Service** `wraaap-api` — siehe `render.yaml`.
 
-1. Repo verbinden
-2. Build: `npm ci && npm run build`
-3. Start: `npm start` (`node server.mjs` — static + `/api/orders`)
+- Frontend: CDN-static, kein Node-Lag beim Laden
+- API: `https://wraaap-api.onrender.com` (Orders zwischen Geräten)
+- Lokal: `npm run dev` (Vite + `/api/orders` inline)
 
-Bestellungen werden serverseitig geteilt: Phone bestellt → Küche-Laptop sieht den Zettel (Polling ~2s).
-
-Lokal: `npm run dev` (Vite inkl. Orders-API).
+Falls du noch den alten **einen** Web Service hast: in Render Blueprint neu deployen oder manuell auf Static Site umstellen und `VITE_API_BASE=https://wraaap-api.onrender.com` beim Build setzen.
