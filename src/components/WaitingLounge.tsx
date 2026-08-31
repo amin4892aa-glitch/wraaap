@@ -44,6 +44,7 @@ import {
 } from '../lib/gambleAudio'
 import { WrapPokeCard } from './WrapPokeCard'
 import { OrderProgressBar } from './OrderProgressBar'
+import { LoungeMusicPlayer } from './LoungeMusicPlayer'
 import './WaitingLounge.css'
 
 const DropCutscene = lazy(() =>
@@ -423,7 +424,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   }
 
   return (
-    <div className="lounge">
+    <div className={`lounge ${order?.status === 'fertig' ? 'lounge-order-ready' : ''}`}>
       <div className="lounge-noise" aria-hidden />
       <header className="lounge-top">
         <button type="button" className="lounge-brand" onClick={onHome}>
@@ -434,6 +435,8 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
           Order again
         </button>
       </header>
+
+      <LoungeMusicPlayer />
 
       {readyNotice && order?.status === 'fertig' && (
         <div className="lounge-ready-toast" role="status" aria-live="assertive">

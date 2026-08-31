@@ -64,6 +64,18 @@
   transform: rotate(-2deg);
 }
 
+.lounge-order-ready .lounge-stamp {
+  background: #2a9d4b;
+  animation: lounge-stamp-blink 0.55s step-end infinite;
+}
+
+@keyframes lounge-stamp-blink {
+  50% {
+    background: #3dd68c;
+    color: #111;
+  }
+}
+
 .lounge-ghost {
   border: 2px solid #f4efe6;
   background: transparent;
@@ -107,10 +119,33 @@
     transform 0.35s ease;
 }
 
+.lounge-music {
+  position: relative;
+  z-index: 2;
+  margin: 0 18px 12px;
+  max-width: 1200px;
+}
+
 .lounge-ticket.is-ready {
   box-shadow: 8px 8px 0 #2a9d4b;
   transform: rotate(0deg) scale(1.01);
-  animation: lounge-ticket-ready 0.9s ease-in-out infinite alternate;
+  animation: lounge-ticket-blink 0.7s ease-in-out infinite;
+}
+
+@keyframes lounge-ticket-blink {
+  0%,
+  100% {
+    border-color: #111;
+    background: #f4efe6;
+    box-shadow: 8px 8px 0 #2a9d4b;
+  }
+  50% {
+    border-color: #2a9d4b;
+    background: #e8fff0;
+    box-shadow:
+      0 0 0 3px rgba(61, 214, 140, 0.55),
+      8px 8px 0 #3dd68c;
+  }
 }
 
 .lounge-ticket.is-cooking {
@@ -119,15 +154,6 @@
 
 .lounge-ticket.is-queued {
   box-shadow: 8px 8px 0 #666;
-}
-
-@keyframes lounge-ticket-ready {
-  from {
-    box-shadow: 8px 8px 0 #2a9d4b;
-  }
-  to {
-    box-shadow: 10px 10px 0 #3dd68c;
-  }
 }
 
 .lounge-ticket p {
@@ -195,7 +221,14 @@
   background: #2a9d4b;
   color: #fff;
   transform: rotate(-1deg);
-  animation: lounge-status-pop 0.6s ease;
+  animation: lounge-status-blink 0.5s step-end infinite;
+}
+
+@keyframes lounge-status-blink {
+  50% {
+    background: #111;
+    color: #3dd68c;
+  }
 }
 
 .lounge-ticket.is-cooking .lounge-status {
@@ -228,7 +261,19 @@
   border: 3px solid #111;
   box-shadow: 6px 6px 0 #111;
   font-family: var(--mono);
-  animation: lounge-toast-in 0.45s ease;
+  animation:
+    lounge-toast-in 0.45s ease,
+    lounge-ready-toast-blink 0.65s ease-in-out infinite 0.45s;
+}
+
+@keyframes lounge-ready-toast-blink {
+  50% {
+    background: #3dd68c;
+    color: #111;
+    box-shadow:
+      0 0 0 4px rgba(61, 214, 140, 0.5),
+      6px 6px 0 #111;
+  }
 }
 
 .lounge-ready-toast strong {

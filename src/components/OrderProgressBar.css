@@ -73,6 +73,16 @@
   color: #2a9d4b;
 }
 
+.order-progress-lounge.step-fertig .order-progress-fill {
+  animation: order-progress-blink 0.55s step-end infinite;
+}
+
+@keyframes order-progress-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .order-progress-lounge.step-in_arbeit {
   color: #c4232a;
 }
