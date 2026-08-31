@@ -2,13 +2,17 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { isPortalUnlocked, setPortalUnlocked, type GatedPortal } from '../lib/portalAuth'
 import './PortalGate.css'
 
+type PortalGateApi = {
+  lock: () => void
+}
+
 type Props = {
   portal: GatedPortal
   title: string
   hint: string
   password: string
   onHome: () => void
-  children: ReactNode
+  children: (api: PortalGateApi) => ReactNode
 }
 
 export function PortalGate({ portal, title, hint, password, onHome, children }: Props) {
@@ -40,14 +44,7 @@ export function PortalGate({ portal, title, hint, password, onHome, children }: 
   }
 
   if (unlocked) {
-    return (
-      <div className="gate-open">
-        <button type="button" className="gate-lock" onClick={lock}>
-          Lock
-        </button>
-        {children}
-      </div>
-    )
+    return <div className="gate-open">{children({ lock })}</div>
   }
 
   return (

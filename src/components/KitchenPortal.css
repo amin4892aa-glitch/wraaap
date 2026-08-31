@@ -19,15 +19,16 @@
 .kitchen-chrome {
   position: relative;
   z-index: 2;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px 14px;
   align-items: center;
-  padding: 18px 22px;
+  padding: 16px 22px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.kitchen-chrome button,
-.kitchen-chrome span {
+.kitchen-home,
+.kitchen-chrome-actions button {
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.65);
@@ -35,10 +36,32 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-size: 0.62rem;
+  cursor: pointer;
 }
 
-.kitchen-chrome button {
-  cursor: pointer;
+.kitchen-label {
+  justify-self: center;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+}
+
+.kitchen-chrome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.kitchen-lock {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 6px 10px;
+}
+
+.kitchen-lock:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 .kitchen-shell {

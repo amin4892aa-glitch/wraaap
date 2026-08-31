@@ -129,9 +129,11 @@ function App() {
           password="kueche"
           onHome={() => go('hub')}
         >
-          <Suspense fallback={<div className="style-boot">… Küche …</div>}>
-            <KitchenPortal onHome={() => go('hub')} />
-          </Suspense>
+          {({ lock }) => (
+            <Suspense fallback={<div className="style-boot">… Küche …</div>}>
+              <KitchenPortal onHome={() => go('hub')} onLock={lock} />
+            </Suspense>
+          )}
         </PortalGate>
       )}
 
@@ -143,9 +145,11 @@ function App() {
           password="admin"
           onHome={() => go('hub')}
         >
-          <Suspense fallback={<div className="style-boot">… Admin …</div>}>
-            <AdminPortal onHome={() => go('hub')} />
-          </Suspense>
+          {({ lock }) => (
+            <Suspense fallback={<div className="style-boot">… Admin …</div>}>
+              <AdminPortal onHome={() => go('hub')} onLock={lock} />
+            </Suspense>
+          )}
         </PortalGate>
       )}
     </div>

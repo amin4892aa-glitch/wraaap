@@ -14,6 +14,7 @@ import './AdminPortal.css'
 
 type Props = {
   onHome: () => void
+  onLock: () => void
 }
 
 type AdminTab = 'overview' | 'budget' | 'codes'
@@ -28,7 +29,7 @@ function promoReward(code: (typeof PROMO_CODES)[number]) {
   return 'chips only'
 }
 
-export function AdminPortal({ onHome }: Props) {
+export function AdminPortal({ onHome, onLock }: Props) {
   const [orders, setOrders] = useState<Order[]>([])
   const [tab, setTab] = useState<AdminTab>('overview')
 
@@ -64,10 +65,10 @@ export function AdminPortal({ onHome }: Props) {
   return (
     <div className="admin">
       <header className="admin-chrome">
-        <button type="button" onClick={onHome}>
+        <button type="button" className="admin-home" onClick={onHome}>
           WRAAAP ©2026
         </button>
-        <span>Admin</span>
+        <span className="admin-label">Admin</span>
         <nav className="admin-tabs">
           <button
             type="button"
@@ -92,6 +93,9 @@ export function AdminPortal({ onHome }: Props) {
           </button>
           <button type="button" onClick={onHome}>
             Portals
+          </button>
+          <button type="button" className="admin-lock" onClick={onLock}>
+            Lock
           </button>
         </nav>
       </header>

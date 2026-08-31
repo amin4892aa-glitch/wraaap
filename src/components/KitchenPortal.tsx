@@ -19,9 +19,10 @@ type Filter = 'alle' | OrderStatus
 
 type Props = {
   onHome: () => void
+  onLock: () => void
 }
 
-export function KitchenPortal({ onHome }: Props) {
+export function KitchenPortal({ onHome, onLock }: Props) {
   const [orders, setOrders] = useState<Order[]>([])
   const [filter, setFilter] = useState<Filter>('alle')
 
@@ -65,13 +66,18 @@ export function KitchenPortal({ onHome }: Props) {
   return (
     <div className="kitchen">
       <header className="kitchen-chrome">
-        <button type="button" onClick={onHome}>
+        <button type="button" className="kitchen-home" onClick={onHome}>
           WRAAAP ©2026
         </button>
-        <span>Kitchen</span>
-        <button type="button" onClick={onHome}>
-          Portals
-        </button>
+        <span className="kitchen-label">Kitchen</span>
+        <div className="kitchen-chrome-actions">
+          <button type="button" onClick={onHome}>
+            Portals
+          </button>
+          <button type="button" className="kitchen-lock" onClick={onLock}>
+            Lock
+          </button>
+        </div>
       </header>
 
       <div className="kitchen-shell">
