@@ -347,6 +347,7 @@ export function hasRolledCard(owned: OwnedCard[], cardId: string) {
 }
 
 export function canReplayEdit(owned: OwnedCard[], card: DropCard) {
+  // Only epic+ cutscenes, and only if this card was rolled on the bandit
   return EDIT_RARITIES.has(card.rarity) && hasRolledCard(owned, card.id)
 }
 

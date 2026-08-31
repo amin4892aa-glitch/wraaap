@@ -23,9 +23,10 @@ import {
   unlockAchievement,
 } from '../data/achievements'
 import {
-  consumeLuckBoost,
+  formatLuckRemaining,
+  getActiveLuck,
   loadChips,
-  loadLuckPulls,
+  peekLuckBoost,
   redeemPromo,
   saveChips,
 } from '../data/promoCodes'
@@ -101,7 +102,8 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   const [chips, setChips] = useState(() => loadChips())
   const [promo, setPromo] = useState('')
   const [promoMsg, setPromoMsg] = useState<string | null>(null)
-  const [luckPulls, setLuckPulls] = useState(() => loadLuckPulls())
+  const [luckLeftMs, setLuckLeftMs] = useState(() => getActiveLuck().remainingMs)
+  const [luckMult, setLuckMult] = useState(() => getActiveLuck().mult)
   const [reels, setReels] = useState<[Symbol, Symbol, Symbol]>(['🌯', '🥑', '🌶️'])
   const [spinning, setSpinning] = useState(false)
   const [leverDown, setLeverDown] = useState(false)
@@ -120,6 +122,17 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
   useEffect(() => {
     syncAchievementCosmetics()
     void import('./DropCutscene')
+  }, [])
+
+  useEffect(() => {
+    const tick = () => {
+      const active = getActiveLuck()
+      setLuckLeftMs(active.remainingMs)
+      setLuckMult(active.mult)
+    }
+    tick()
+    const id = window.setInterval(tick, 1000)
+    return () => window.clearInterval(id)
   }, [])
 
   useEffect(() => {
@@ -181,22 +194,9 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
       setChips(result.nextBalance)
       setPromo('')
     }
-    if (result.ok && typeof result.luckPulls === 'number') {
-      setLuckPulls(result.luckPulls)
-    }
-    if (result.ok && result.grantCard) {
-      unlockGambleAudio()
-      const card = getCard(result.grantCard)
-      if (card) {
-        // only add to inventory if not already owned
-        const already = loadInventory().some((row) => row.cardId === card.id)
-        const nextOwned = already
-          ? loadInventory()
-          : addToInventory(card.id, 'promo')
-        setOwned(nextOwned)
-        window.setTimeout(() => setReveal(card), 220)
-        maybeUnlockWrapCursor(nextOwned)
-      }
+    if (result.ok && typeof result.luckRemainingMs === 'number') {
+      setLuckLeftMs(result.luckRemainingMs)
+      if (typeof result.luckBoost === 'number') setLuckMult(result.luckBoost)
     }
   }
 
@@ -309,8 +309,7 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
           setSpinning(false)
           window.setTimeout(() => setLeverDown(false), 180)
 
-          const luck = consumeLuckBoost()
-          if (luck > 1) setLuckPulls(loadLuckPulls())
+          const luck = peekLuckBoost()
           const dropCard = shouldDropCard(kind, luck)
 
           if (dropCard) {
@@ -387,10 +386,9 @@ export function WaitingLounge({ orderId, onHome, onOrderAgain }: Props) {
               Redeem
             </button>
             {promoMsg && <p>{promoMsg}</p>}
-            {luckPulls > 0 && (
+            {luckLeftMs > 0 && luckMult > 1 && (
               <p className="lounge-edit-lock">
-                next pull = 100× luck
-                {luckPulls > 1 ? ` ×${luckPulls}` : ''}
+                {luckMult}× luck · {formatLuckRemaining(luckLeftMs)} left
               </p>
             )}
           </form>

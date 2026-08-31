@@ -2,7 +2,7 @@ export const CHIPS_KEY = 'wraaap-chips'
 export const PROMO_USED_KEY = 'wraaap-promos-used'
 export const START_CHIPS = 100
 
-export const LUCK_PULLS_KEY = 'wraaap-luck-pulls'
+export const LUCK_UNTIL_KEY = 'wraaap-luck-until'
 export const LUCK_MULT_KEY = 'wraaap-luck-mult'
 
 export type PromoCode = {
@@ -11,8 +11,10 @@ export type PromoCode = {
   blurb: string
   /** Optional card grant (edit preview) */
   grantCard?: string
-  /** Next pull(s) use this luck multiplier (Sol RNG style) */
+  /** Active luck multiplier while timer runs (Sol RNG style) */
   luckBoost?: number
+  /** How long luckBoost lasts, in ms */
+  luckBoostMs?: number
   /** Can redeem again — replays cutscene, chips only once */
   replayable?: boolean
 }
@@ -34,44 +36,34 @@ export const PROMO_CODES: PromoCode[] = [
   {
     code: 'EDIT',
     chips: 25,
-    blurb: 'next pull 100× luck',
-    luckBoost: 100,
-    replayable: true,
+    blurb: '10× luck for 5 minutes · once',
+    luckBoost: 10,
+    luckBoostMs: 5 * 60 * 1000,
   },
   {
     code: 'ESPRESSO',
     chips: 25,
-    blurb: 'divine AMV edit · replay anytime',
-    grantCard: 'espresso-notice',
-    replayable: true,
+    blurb: 'divine tip jar',
   },
   {
     code: 'HEADLOCK',
     chips: 25,
-    blurb: 'legendary lyric AE edit · replay anytime',
-    grantCard: 'garden-glow',
-    replayable: true,
+    blurb: 'legendary tip jar',
   },
   {
     code: 'BIRD',
     chips: 25,
-    blurb: 'mythic romance AMV edit · replay anytime',
-    grantCard: 'classic-myth',
-    replayable: true,
+    blurb: 'mythic tip jar',
   },
   {
     code: 'MAMACITA',
     chips: 25,
-    blurb: 'Masha Mamacita AMV · AE shake heat',
-    grantCard: 'sunset-omen',
-    replayable: true,
+    blurb: 'mamacita tip jar',
   },
   {
     code: 'FOCUSWATER',
     chips: 25,
-    blurb: 'Apple motion graphic edit · watermark hold',
-    grantCard: 'focus-water',
-    replayable: true,
+    blurb: 'focus tip jar',
   },
 ]
 
@@ -103,42 +95,55 @@ export function saveUsedPromos(codes: string[]) {
   localStorage.setItem(PROMO_USED_KEY, JSON.stringify(codes))
 }
 
-export function loadLuckPulls() {
+function clearLuck() {
   try {
-    const n = Number(localStorage.getItem(LUCK_PULLS_KEY) || '0')
-    return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0
+    localStorage.removeItem(LUCK_UNTIL_KEY)
+    localStorage.removeItem(LUCK_MULT_KEY)
+    // legacy pull-based luck
+    localStorage.removeItem('wraaap-luck-pulls')
   } catch {
-    return 0
+    /* ignore */
   }
 }
 
-export function loadLuckMult() {
-  try {
-    const n = Number(localStorage.getItem(LUCK_MULT_KEY) || '1')
-    return Number.isFinite(n) && n > 1 ? n : 100
-  } catch {
-    return 100
-  }
-}
-
-export function saveLuckPulls(count: number, mult = 100) {
-  localStorage.setItem(LUCK_PULLS_KEY, String(Math.max(0, Math.floor(count))))
+export function activateLuckBoost(mult: number, durationMs: number) {
+  const until = Date.now() + Math.max(0, durationMs)
+  localStorage.setItem(LUCK_UNTIL_KEY, String(until))
   localStorage.setItem(LUCK_MULT_KEY, String(Math.max(1, Math.floor(mult))))
+  localStorage.removeItem('wraaap-luck-pulls')
+  return until
 }
 
-export function addLuckPulls(amount = 1, mult = 100) {
-  const next = loadLuckPulls() + amount
-  saveLuckPulls(next, mult)
-  return next
+/** Active timed luck — expires automatically. Does not consume on pull. */
+export function getActiveLuck(): { mult: number; remainingMs: number; until: number } {
+  try {
+    const until = Number(localStorage.getItem(LUCK_UNTIL_KEY) || '0')
+    const mult = Number(localStorage.getItem(LUCK_MULT_KEY) || '1')
+    const remainingMs = until - Date.now()
+    if (!Number.isFinite(until) || remainingMs <= 0) {
+      if (until) clearLuck()
+      return { mult: 1, remainingMs: 0, until: 0 }
+    }
+    return {
+      mult: Number.isFinite(mult) && mult > 1 ? Math.floor(mult) : 1,
+      remainingMs,
+      until,
+    }
+  } catch {
+    return { mult: 1, remainingMs: 0, until: 0 }
+  }
 }
 
-/** Luck multiplier for this pull (1 = normal). Consumes one boosted pull. */
-export function consumeLuckBoost() {
-  const n = loadLuckPulls()
-  if (n <= 0) return 1
-  const mult = loadLuckMult()
-  saveLuckPulls(n - 1, mult)
-  return mult
+/** Luck multiplier for this pull (1 = normal). Timed buff, not per-pull. */
+export function peekLuckBoost() {
+  return getActiveLuck().mult
+}
+
+export function formatLuckRemaining(ms: number) {
+  const total = Math.max(0, Math.ceil(ms / 1000))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 export function redeemPromo(input: string): {
@@ -148,7 +153,8 @@ export function redeemPromo(input: string): {
   nextBalance?: number
   grantCard?: string
   luckBoost?: number
-  luckPulls?: number
+  luckUntil?: number
+  luckRemainingMs?: number
 } {
   const code = input.trim().toUpperCase().replace(/\s+/g, '')
   if (!code) return { ok: false, message: 'enter a code' }
@@ -175,13 +181,15 @@ export function redeemPromo(input: string): {
     saveUsedPromos([...used, code])
   }
 
-  let luckPulls = loadLuckPulls()
-  if (promo.luckBoost) {
-    luckPulls = addLuckPulls(1, promo.luckBoost)
+  let luckUntil = 0
+  let luckRemainingMs = 0
+  if (promo.luckBoost && promo.luckBoostMs) {
+    luckUntil = activateLuckBoost(promo.luckBoost, promo.luckBoostMs)
+    luckRemainingMs = Math.max(0, luckUntil - Date.now())
   }
 
-  const locked = promo.luckBoost
-    ? `LOCKED IN · ${promo.luckBoost}× luck · ${promo.blurb}`
+  const locked = promo.luckBoost && promo.luckBoostMs
+    ? `LOCKED IN · ${promo.luckBoost}× luck · ${Math.round(promo.luckBoostMs / 60000)} min`
     : already
       ? `replay · ${promo.blurb}`
       : gained
@@ -195,6 +203,7 @@ export function redeemPromo(input: string): {
     nextBalance: balance,
     grantCard: promo.grantCard,
     luckBoost: promo.luckBoost,
-    luckPulls,
+    luckUntil,
+    luckRemainingMs,
   }
 }

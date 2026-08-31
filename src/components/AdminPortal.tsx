@@ -8,7 +8,6 @@ import {
   type Order,
 } from '../data/orders'
 import { PROMO_CODES } from '../data/promoCodes'
-import { getCard } from '../data/dropCards'
 import { startOrdersPoll } from '../lib/pollOrders'
 import { BudgetPlanner } from './BudgetPlanner'
 import './AdminPortal.css'
@@ -20,10 +19,11 @@ type Props = {
 type AdminTab = 'overview' | 'budget' | 'codes'
 
 function promoReward(code: (typeof PROMO_CODES)[number]) {
-  if (code.luckBoost) return `next pull ${code.luckBoost}× luck`
-  if (code.grantCard) {
-    const card = getCard(code.grantCard)
-    return card ? `edit · ${card.name}` : 'edit cutscene'
+  if (code.luckBoost) {
+    const mins = code.luckBoostMs ? Math.round(code.luckBoostMs / 60000) : 0
+    return mins
+      ? `${code.luckBoost}× luck · ${mins} min · once`
+      : `${code.luckBoost}× luck`
   }
   return 'chips only'
 }
@@ -204,7 +204,13 @@ export function AdminPortal({ onHome }: Props) {
                   </div>
                   <p className="admin-design">
                     {promo.replayable ? 'replayable' : 'one-shot'}
-                    {promo.luckBoost ? ` · ${promo.luckBoost}× luck` : ''}
+                    {promo.luckBoost
+                      ? ` · ${promo.luckBoost}× luck${
+                          promo.luckBoostMs
+                            ? ` · ${Math.round(promo.luckBoostMs / 60000)} min`
+                            : ''
+                        }`
+                      : ''}
                   </p>
                 </article>
               ))}
